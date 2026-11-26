@@ -10,6 +10,7 @@ const modalTitle = document.querySelector("#job-offer-modal-title");
 const formError = document.querySelector("#job-offer-save-error");
 const discardPrompt = document.querySelector("#discard-confirmation");
 const offerFields = [
+  document.querySelector("#job-company"),
   document.querySelector("#job-name"),
   document.querySelector("#job-description"),
   document.querySelector("#required-qualifications"),
@@ -17,6 +18,7 @@ const offerFields = [
   document.querySelector("#job-allocation"),
 ];
 const fieldErrors = [
+  document.querySelector("#job-company-error"),
   document.querySelector("#job-name-error"),
   document.querySelector("#job-description-error"),
   document.querySelector("#required-qualifications-error"),
@@ -34,9 +36,8 @@ let originalFormValues = [];
 
 const detailFields = [
   ["Company", "company"],
-  ["Job description", "jobDescription"],
-  ["Required qualifications", "requiredQualifications"],
-  ["Years of experience", "yearsOfExperience"],
+  ["Job description", "jobDescription", true],
+  ["Required qualifications", "requiredQualifications", true],
   ["Location", "location"],
   ["Allocation", "allocation"],
 ];
@@ -46,7 +47,17 @@ function setText(element, value) {
 }
 
 function positionLabel(position) {
-  return position.jobTitle ?? position.jobName ?? "";
+  return position.jobName ?? "";
+}
+
+function renderMarkdown(element, value) {
+  const markdown = value == null ? "" : String(value);
+  if (typeof marked === "undefined" || typeof DOMPurify === "undefined") {
+    setText(element, markdown);
+    return;
+  }
+  const generatedMarkup = marked.parse(markdown, { html: false });
+  element.innerHTML = DOMPurify.sanitize(generatedMarkup);
 }
 
 function findPositionButton(positionId) {
@@ -79,14 +90,15 @@ function showPosition(position, selectedButton) {
   positionDetails.append(title);
 
   const details = document.createElement("dl");
-  detailFields.forEach(([label, property]) => {
+  detailFields.forEach(([label, property, isMarkdown]) => {
     const field = document.createElement("div");
     field.className = "detail-field";
 
     const term = document.createElement("dt");
     term.textContent = label;
     const description = document.createElement("dd");
-    setText(description, position[property]);
+    if (isMarkdown) renderMarkdown(description, position[property]);
+    else setText(description, position[property]);
 
     field.append(term, description);
     details.append(field);
@@ -100,7 +112,7 @@ function renderPositions(nextPositions) {
   positionList.replaceChildren();
   positions.forEach((position) => {
     const button = document.createElement("button");
-    button.className = "position-button";
+    button.className = "position-button job-offer-button";
     button.type = "button";
     button.dataset.jobOfferId = String(position.id ?? "");
     button.textContent = String(positionLabel(position));

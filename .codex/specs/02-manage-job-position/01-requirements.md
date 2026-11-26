@@ -3,7 +3,7 @@
 > **Current scope:** This is the canonical specification for job-offer management. The original
 > read-only baseline in `.codex/specs/01-recruiter-application/` is historical and superseded here.
 
-- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [ ] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-11-26
 
@@ -24,6 +24,8 @@ panel.
 - [ ] Item 2: When a job offer is selected, display an **Edit** button above the Details panel. When
   no job offer is selected, hide the **Edit** button.
 - [ ] Item 3: Display a **New Job Offer** button above the Details panel at all times.
+- [ ] Item 4: Job offers are not to be displayed as buttons in the list. They are to shown in the
+  format: [jobTitle] - [company] - [jobId]
 
 #### Create and edit form
 
@@ -84,7 +86,8 @@ These scenarios must be validated and verified by the `@reviewer`.
 
 - **Given** the recruiter is viewing the job offer list
 - **When** they select a job offer
-- **Then** that offer is the only selected offer and its details appear in the right-side **Details**
+- **Then** that offer is the only selected offer and its details appear in the right-side **Details
+  **
   panel.
 - **And** any previously selected offer is no longer selected.
 

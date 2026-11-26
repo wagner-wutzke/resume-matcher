@@ -27,8 +27,8 @@ class MongoConfigurationTest {
     assertEquals("localhost", resolver.getProperty(HOST));
     assertEquals("27017", resolver.getProperty(PORT));
     assertEquals("resume_matcher", resolver.getProperty(DATABASE));
-    assertNull(resolver.getProperty(USERNAME));
-    assertNull(resolver.getProperty(PASSWORD));
+    assertEquals("admin", resolver.getProperty(USERNAME));
+    assertEquals("secretpassword", resolver.getProperty(PASSWORD));
     assertEquals("admin", resolver.getProperty(AUTHENTICATION_DATABASE));
     assertNull(resolver.getProperty("spring.mongodb.uri"));
   }

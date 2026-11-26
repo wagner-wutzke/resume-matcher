@@ -19,6 +19,7 @@ public final class JobOfferValidator {
     }
 
     addRequiredError(errors, "jobName", request.jobName());
+    addRequiredError(errors, "company", request.company());
     addRequiredError(errors, "jobDescription", request.jobDescription());
     addRequiredError(errors, "requiredQualifications", request.requiredQualifications());
     addRequiredError(errors, "location", request.location());
@@ -32,6 +33,7 @@ public final class JobOfferValidator {
 
   private void addAllRequiredErrors(Map<String, String> errors) {
     errors.put("jobName", "required");
+    errors.put("company", "required");
     errors.put("jobDescription", "required");
     errors.put("requiredQualifications", "required");
     errors.put("location", "required");

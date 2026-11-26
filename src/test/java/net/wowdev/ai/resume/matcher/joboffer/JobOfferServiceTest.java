@@ -35,22 +35,22 @@ class JobOfferServiceTest {
   @Test
   void createsOfferWithGeneratedIdentifierFromRepository() {
     var request = validRequest("Platform Engineer");
-    var saved = new JobOffer("offer-1", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid");
-    when(repository.save(new JobOffer(null, "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid")))
+    var saved = new JobOffer("offer-1", "Example Company", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid");
+    when(repository.save(new JobOffer(null, "Example Company", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid")))
         .thenReturn(saved);
 
     var result = service.create(request);
 
     assertEquals(saved, result);
     verify(repository).save(new JobOffer(
-        null, "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid"));
+        null, "Example Company", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid"));
     verifyNoMoreInteractions(repository);
   }
 
   @Test
   void updatesExistingOfferWithoutChangingItsIdentifier() {
-    var existing = new JobOffer("offer-1", "Engineer", "Old description", "Java", "Dublin", "Remote");
-    var updated = new JobOffer("offer-1", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid");
+    var existing = new JobOffer("offer-1", "Example Company", "Engineer", "Old description", "Java", "Dublin", "Remote");
+    var updated = new JobOffer("offer-1", "Example Company", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid");
     when(repository.findById("offer-1")).thenReturn(Optional.of(existing));
     when(repository.save(updated)).thenReturn(updated);
 
@@ -75,7 +75,7 @@ class JobOfferServiceTest {
 
   @Test
   void rejectsInvalidRequestBeforePersistence() {
-    var invalid = new JobOfferRequest(" ", "Build systems", "Java", "Dublin", "Hybrid");
+    var invalid = new JobOfferRequest("Example Company", " ", "Build systems", "Java", "Dublin", "Hybrid");
 
     var exception = assertThrows(JobOfferValidationException.class,
         () -> service.create(invalid));
@@ -87,7 +87,7 @@ class JobOfferServiceTest {
   @Test
   void deletesExistingOffer() {
     when(repository.findById("offer-1")).thenReturn(Optional.of(
-        new JobOffer("offer-1", "Engineer", "Build services", "Java", "Dublin", "Remote")));
+        new JobOffer("offer-1", "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote")));
 
     service.delete("offer-1");
 
@@ -117,7 +117,7 @@ class JobOfferServiceTest {
   @Test
   void translatesUpdatePersistenceFailure() {
     when(repository.findById("offer-1")).thenReturn(Optional.of(
-        new JobOffer("offer-1", "Engineer", "Build services", "Java", "Dublin", "Remote")));
+        new JobOffer("offer-1", "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote")));
     when(repository.save(org.mockito.ArgumentMatchers.any(JobOffer.class)))
         .thenThrow(new DataAccessResourceFailureException("database unavailable"));
 
@@ -128,7 +128,7 @@ class JobOfferServiceTest {
   @Test
   void translatesDeletePersistenceFailure() {
     when(repository.findById("offer-1")).thenReturn(Optional.of(
-        new JobOffer("offer-1", "Engineer", "Build services", "Java", "Dublin", "Remote")));
+        new JobOffer("offer-1", "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote")));
     org.mockito.Mockito.doThrow(new DataAccessResourceFailureException("database unavailable"))
         .when(repository).deleteById("offer-1");
 
@@ -136,6 +136,6 @@ class JobOfferServiceTest {
   }
 
   private JobOfferRequest validRequest(String jobName) {
-    return new JobOfferRequest(jobName, "Build systems", "Java", "Dublin", "Hybrid");
+    return new JobOfferRequest("Example Company", jobName, "Build systems", "Java", "Dublin", "Hybrid");
   }
 }

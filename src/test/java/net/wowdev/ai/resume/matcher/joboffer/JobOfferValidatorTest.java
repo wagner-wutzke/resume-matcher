@@ -50,6 +50,7 @@ class JobOfferValidatorTest {
   @Test
   void reportsAllFieldsRequiredForNullRequest() {
     assertEquals(Map.of(
+        "company", "required",
         "jobName", "required",
         "jobDescription", "required",
         "requiredQualifications", "required",
@@ -58,11 +59,12 @@ class JobOfferValidatorTest {
   }
 
   private static JobOfferRequest requestWith(String allocation) {
-    return new JobOfferRequest("Engineer", "Build services", "Java", "Dublin", allocation);
+    return new JobOfferRequest("Example Company", "Engineer", "Build services", "Java", "Dublin", allocation);
   }
 
   private static JobOfferRequest requestWithField(String field, String value) {
     return new JobOfferRequest(
+        field.equals("company") ? value : "Example Company",
         field.equals("jobName") ? value : "Engineer",
         field.equals("jobDescription") ? value : "Build services",
         field.equals("requiredQualifications") ? value : "Java",
@@ -72,6 +74,8 @@ class JobOfferValidatorTest {
 
   private static Stream<Arguments> requiredFieldCases() {
     return Stream.of(
+        Arguments.of("company", null),
+        Arguments.of("company", "  "),
         Arguments.of("jobName", null),
         Arguments.of("jobName", "  "),
         Arguments.of("jobDescription", null),

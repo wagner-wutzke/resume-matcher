@@ -34,22 +34,22 @@ fields are:
 | API field                | Meaning                                          | Validation                                     |
 |--------------------------|--------------------------------------------------|------------------------------------------------|
 | `company`                | Hiring company name                              | Required                                       |
-| `jobTitle`               | Job Title                                        | Required                                       |
+| `jobName`                | Job Name                                         | Required                                       |
 | `jobDescription`         | Job description, stored as Markdown text         | Required                                       |
 | `requiredQualifications` | Required qualifications, stored as Markdown text | Required                                       |
-| `yearsOfExperience`      | Required years of experience                     | Required                                       |
 | `location`               | Job location                                     | Required                                       |
 | `allocation`             | Work allocation                                  | Required; one of `Remote`, `Hybrid`, `On-site` |
 
 
-The server validates all six fields for create and update. Treat blank or whitespace-only values
-as empty. Do not seed records or make persistence changes beyond these fields and the identifier.
+The six editable fields are `company`, `jobTitle`, `jobDescription`, `requiredQualifications`,
+`location`, and `allocation`. The server validates all six fields for create and update. Treat
+blank or whitespace-only values as empty. Do not seed records or make persistence changes beyond
+these fields and the identifier.
 
 ## 3. REST API
 
 All job-offer endpoints use `/api/job-offers`. Successful response objects use `id`, `company`,
-`jobTitle`, `jobDescription`, `requiredQualifications`, `yearsOfExperience`, `location`, and 
-`allocation`.
+`jobTitle`, `jobDescription`, `requiredQualifications`, `yearsOfExperience`, `location`, and `allocation`.
 
 ### `GET /api/job-offers`
 

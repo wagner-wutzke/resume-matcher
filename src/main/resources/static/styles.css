@@ -173,6 +173,47 @@ body {
   color: #2347a8;
 }
 
+.job-offer-button {
+  height: 35px;
+  min-height: 35px;
+  padding: 0 14px;
+  border: 1px solid var(--royal-blue);
+  border-radius: 6px;
+  background: var(--royal-blue);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.job-offer-button:hover, .job-offer-button:focus-visible {
+  border-color: #3156c5;
+  background: #3156c5;
+  color: #fff;
+}
+
+.job-offer-button:focus-visible {
+  outline: 3px solid rgb(65 105 225 / 30%);
+  outline-offset: 2px;
+}
+
+.position-button.job-offer-button {
+  width: 100%;
+  justify-content: flex-start;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.position-button.job-offer-button.selected {
+  border-color: #3156c5;
+  background: #3156c5;
+  color: #fff;
+}
+
 .load-error {
   padding: 14px;
   color: #9b4141;

@@ -5,6 +5,7 @@ import test from "node:test";
 
 const script = await readFile(new URL("../../main/resources/static/app.js", import.meta.url), "utf8");
 const page = await readFile(new URL("../../main/resources/static/index.html", import.meta.url), "utf8");
+const styles = await readFile(new URL("../../main/resources/static/styles.css", import.meta.url), "utf8");
 
 class FakeElement {
   constructor() {
@@ -19,6 +20,7 @@ class FakeElement {
       contains: (name) => this.classes.has(name),
     };
     this.text = "";
+    this.html = "";
     this.hidden = false;
     this.dataset = {};
   }
@@ -30,6 +32,16 @@ class FakeElement {
 
   get textContent() {
     return this.text + this.children.map((child) => child.textContent).join("");
+  }
+
+  set innerHTML(value) {
+    this.children = [];
+    this.text = "";
+    this.html = String(value);
+  }
+
+  get innerHTML() {
+    return this.html;
   }
 
   set className(value) {
@@ -76,7 +88,7 @@ class FakeElement {
   }
 }
 
-function runApp(fetch) {
+function runApp(fetch, markdownGlobals = {}) {
   const elements = new Map([
     ["#position-list", new FakeElement()],
     ["#position-details", new FakeElement()],
@@ -89,11 +101,13 @@ function runApp(fetch) {
     ["#job-offer-save-error", new FakeElement()],
     ["#discard-confirmation", new FakeElement()],
     ["#job-offer-form", new FakeElement()],
+    ["#job-company", new FakeElement()],
     ["#job-name", new FakeElement()],
     ["#job-description", new FakeElement()],
     ["#required-qualifications", new FakeElement()],
     ["#job-location", new FakeElement()],
     ["#job-allocation", new FakeElement()],
+    ["#job-company-error", new FakeElement()],
     ["#job-name-error", new FakeElement()],
     ["#job-description-error", new FakeElement()],
     ["#required-qualifications-error", new FakeElement()],
@@ -106,6 +120,7 @@ function runApp(fetch) {
     ["#save-job-offer", new FakeElement()],
   ]);
   [
+    ["#job-company", "company"],
     ["#job-name", "jobName"],
     ["#job-description", "jobDescription"],
     ["#required-qualifications", "requiredQualifications"],
@@ -126,7 +141,7 @@ function runApp(fetch) {
       },
     },
   };
-  runInNewContext(script, { document, fetch, bootstrap });
+  runInNewContext(script, { document, fetch, bootstrap, ...markdownGlobals });
   return elements;
 }
 
@@ -142,10 +157,9 @@ test("renders offers and selected details as text", async () => {
       id: "offer-1",
       jobId: "BE-00100010",
       company: "Example Company",
-      jobTitle: "Backend Engineer",
+      jobName: "Backend Engineer",
       jobDescription: markupLikeText,
       requiredQualifications: "Java and Spring",
-      yearsOfExperience: 7,
       location: "Dublin",
       allocation: "Remote",
     }],
@@ -162,11 +176,44 @@ test("renders offers and selected details as text", async () => {
   const detailText = elements.get("#position-details").textContent;
   assert.match(detailText, /Backend Engineer/);
   assert.match(detailText, /Example Company/);
+  assert.ok(detailText.indexOf("Example Company") < detailText.indexOf(markupLikeText));
   assert.match(detailText, /<img src=x onerror=alert\(1\)>/);
   assert.match(detailText, /Java and Spring/);
-  assert.match(detailText, /7/);
   assert.match(detailText, /Dublin/);
   assert.match(detailText, /Remote/);
+});
+
+test("renders Markdown after disabling raw HTML and sanitizing generated markup", async () => {
+  const parseOptions = [];
+  const sanitizedInputs = [];
+  const unsafeMarkup = "<p><strong>Safe Markdown</strong><img src=x onerror=alert(1)></p>";
+  const elements = runApp(async () => ({
+    ok: true,
+    json: async () => [{
+      id: "offer-markdown",
+      company: "<b>Company</b>",
+      jobName: "Engineer",
+      jobDescription: "**Safe Markdown**",
+      requiredQualifications: "- Java",
+      location: "Dublin",
+      allocation: "Remote",
+    }],
+  }), {
+    marked: { parse: (_source, options) => { parseOptions.push(options); return unsafeMarkup; } },
+    DOMPurify: { sanitize: (html) => { sanitizedInputs.push(html); return "<p><strong>Safe Markdown</strong></p>"; } },
+  });
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+
+  const detailFields = elements.get("#position-details").children[1].children;
+  const company = detailFields[0].children[1];
+  const description = detailFields[1].children[1];
+  assert.equal(company.textContent, "<b>Company</b>");
+  assert.equal(company.html, "");
+  assert.equal(parseOptions.length, 2);
+  assert.ok(parseOptions.every((options) => options.html === false));
+  assert.deepEqual(sanitizedInputs, [unsafeMarkup, unsafeMarkup]);
+  assert.equal(description.innerHTML, "<p><strong>Safe Markdown</strong></p>");
 });
 
 test("leaves the list and details empty for an empty response", async () => {
@@ -183,7 +230,7 @@ test("loads the catalog once and labels offers with their job titles", async () 
     requests.push(url);
     return {
       ok: true,
-      json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
+      json: async () => [{ id: "offer-1", jobName: "Backend Engineer" }],
     };
   });
   await flushApp();
@@ -195,7 +242,7 @@ test("loads the catalog once and labels offers with their job titles", async () 
 test("does not preselect a returned offer", async () => {
   const elements = runApp(async () => ({
     ok: true,
-    json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
+    json: async () => [{ id: "offer-1", jobName: "Backend Engineer" }],
   }));
   await flushApp();
 
@@ -246,13 +293,28 @@ test("shows edit and delete actions only when an offer is selected", async () =>
   buttons[1].click();
   assert.equal(buttons[0].attributes.get("aria-pressed"), "false");
   assert.equal(buttons[1].attributes.get("aria-pressed"), "true");
+  assert.equal(buttons[1].classList.contains("job-offer-button"), true);
   assert.match(elements.get("#position-details").textContent, /Designer/);
   assert.doesNotMatch(elements.get("#position-details").textContent, /Engineer/);
+});
+
+test("uses the shared style and dimensions for job-offer buttons", () => {
+  const actionIds = ["new-job-offer", "edit-job-offer", "delete-job-offer", "continue-editing",
+    "discard-changes", "close-job-offer-modal", "cancel-job-offer", "save-job-offer"];
+  actionIds.forEach((id) => {
+    const button = page.match(new RegExp(`<button[^>]*id="${id}"[^>]*>`));
+    assert.ok(button, `missing button ${id}`);
+    assert.match(button[0], /class="[^"]*job-offer-button/);
+  });
+  assert.match(styles, /\.job-offer-button\s*\{[^}]*height:\s*35px;[^}]*font-size:\s*0\.75rem;/s);
+  assert.match(styles, /\.position-button\.job-offer-button\s*\{/);
+  assert.match(styles, /\.position-button\.job-offer-button\.selected\s*\{/);
 });
 
 test("opens an empty job-offer form from New Job Offer", async () => {
   const elements = runApp(async () => ({ ok: true, json: async () => [] }));
   const fieldSelectors = [
+    "#job-company",
     "#job-name",
     "#job-description",
     "#required-qualifications",
@@ -273,6 +335,7 @@ test("opens an empty job-offer form from New Job Offer", async () => {
 test("opens the shared form with selected offer values for editing", async () => {
   const offer = {
     id: "offer-1",
+    company: "Example Company",
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
@@ -287,6 +350,7 @@ test("opens the shared form with selected offer values for editing", async () =>
 
   assert.equal(elements.get("#job-offer-modal").classList.contains("show"), true);
   assert.equal(elements.get("#job-offer-modal-title").textContent, "Edit Job Offer");
+  assert.equal(elements.get("#job-company").value, offer.company);
   assert.equal(elements.get("#job-name").value, offer.jobName);
   assert.equal(elements.get("#job-description").value, offer.jobDescription);
   assert.equal(elements.get("#required-qualifications").value, offer.requiredQualifications);
@@ -310,6 +374,7 @@ test("shows accessible required errors only after Save is submitted", async () =
   elements.get("#new-job-offer").click();
 
   const fieldSelectors = [
+    "#job-company",
     "#job-name",
     "#job-description",
     "#required-qualifications",
@@ -317,6 +382,7 @@ test("shows accessible required errors only after Save is submitted", async () =
     "#job-allocation",
   ];
   const errorSelectors = [
+    "#job-company-error",
     "#job-name-error",
     "#job-description-error",
     "#required-qualifications-error",
@@ -329,6 +395,7 @@ test("shows accessible required errors only after Save is submitted", async () =
   errorSelectors.forEach((selector) => assert.equal(elements.get(selector).hidden, true));
 
   elements.get("#job-description").value = "Build services";
+  elements.get("#job-company").value = "Example Company";
   elements.get("#required-qualifications").value = "Java";
   elements.get("#job-location").value = "Dublin";
   elements.get("#job-allocation").value = "Remote";
@@ -345,6 +412,7 @@ test("shows accessible required errors only after Save is submitted", async () =
 test("creates, selects, and displays the returned offer after a successful save", async () => {
   const savedOffer = {
     id: "offer-2",
+    company: "Example Company",
     jobName: "Platform Engineer",
     jobDescription: "Build systems",
     requiredQualifications: "Java",
@@ -359,6 +427,7 @@ test("creates, selects, and displays the returned offer after a successful save"
   });
   await flushApp();
   elements.get("#new-job-offer").click();
+  elements.get("#job-company").value = savedOffer.company;
   elements.get("#job-name").value = savedOffer.jobName;
   elements.get("#job-description").value = savedOffer.jobDescription;
   elements.get("#required-qualifications").value = savedOffer.requiredQualifications;
@@ -371,6 +440,7 @@ test("creates, selects, and displays the returned offer after a successful save"
   assert.equal(requests[1].url, "/api/job-offers");
   assert.equal(requests[1].options.method, "POST");
   assert.deepEqual(JSON.parse(requests[1].options.body), {
+    company: savedOffer.company,
     jobName: savedOffer.jobName,
     jobDescription: savedOffer.jobDescription,
     requiredQualifications: savedOffer.requiredQualifications,
@@ -388,6 +458,7 @@ test("creates, selects, and displays the returned offer after a successful save"
 test("updates a selected offer and keeps it selected after a successful save", async () => {
   const originalOffer = {
     id: "offer-1",
+    company: "Example Company",
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
@@ -428,6 +499,7 @@ test("keeps a failed create form open with values and an error message", async (
   });
   await flushApp();
   elements.get("#new-job-offer").click();
+  elements.get("#job-company").value = "Example Company";
   elements.get("#job-name").value = "Engineer";
   elements.get("#job-description").value = "Build services";
   elements.get("#required-qualifications").value = "Java";
@@ -446,6 +518,7 @@ test("keeps a failed create form open with values and an error message", async (
 test("keeps the selected details and edit values after a failed update", async () => {
   const originalOffer = {
     id: "offer-1",
+    company: "Example Company",
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
@@ -513,6 +586,7 @@ test("discards changed form values only after confirmation", async () => {
 test("deletes the selected offer and clears its details after success", async () => {
   const offer = {
     id: "offer-1",
+    company: "Example Company",
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
@@ -542,6 +616,7 @@ test("deletes the selected offer and clears its details after success", async ()
 test("keeps the selected offer and details after a failed delete", async () => {
   const offer = {
     id: "offer-1",
+    company: "Example Company",
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",

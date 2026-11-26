@@ -18,32 +18,34 @@ class JobOfferDtoSerializationTest {
   @Test
   void serializesCreateAndUpdateRequestFields() throws Exception {
     var request = new JobOfferRequest(
-        "Engineer", "Build services", "Java", "Dublin", "Remote");
+        "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote");
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(request));
 
-    assertEquals("Engineer", json.get("jobName").asText());
-    assertEquals("Build services", json.get("jobDescription").asText());
-    assertEquals("Java", json.get("requiredQualifications").asText());
-    assertEquals("Dublin", json.get("location").asText());
-    assertEquals("Remote", json.get("allocation").asText());
-    assertEquals(5, json.size());
-  }
-
-  @Test
-  void serializesJobOfferResponseFields() throws Exception {
-    var response = new JobOfferResponse(
-        "offer-1", "Engineer", "Build services", "Java", "Dublin", "Remote");
-
-    var json = objectMapper.readTree(objectMapper.writeValueAsString(response));
-
-    assertEquals("offer-1", json.get("id").asText());
+    assertEquals("Example Company", json.get("company").asText());
     assertEquals("Engineer", json.get("jobName").asText());
     assertEquals("Build services", json.get("jobDescription").asText());
     assertEquals("Java", json.get("requiredQualifications").asText());
     assertEquals("Dublin", json.get("location").asText());
     assertEquals("Remote", json.get("allocation").asText());
     assertEquals(6, json.size());
+  }
+
+  @Test
+  void serializesJobOfferResponseFields() throws Exception {
+    var response = new JobOfferResponse(
+        "offer-1", "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote");
+
+    var json = objectMapper.readTree(objectMapper.writeValueAsString(response));
+
+    assertEquals("offer-1", json.get("id").asText());
+    assertEquals("Example Company", json.get("company").asText());
+    assertEquals("Engineer", json.get("jobName").asText());
+    assertEquals("Build services", json.get("jobDescription").asText());
+    assertEquals("Java", json.get("requiredQualifications").asText());
+    assertEquals("Dublin", json.get("location").asText());
+    assertEquals("Remote", json.get("allocation").asText());
+    assertEquals(7, json.size());
   }
 
   @Test

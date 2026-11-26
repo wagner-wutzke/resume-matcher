@@ -82,3 +82,18 @@
   changes follow the specified CRUD behaviors, and no unrequested fields or workflows were added.
 - [x] **Task 5.3 — Reviewer report:** Review implementation against the requirements and design;
   record spec compliance, acceptance coverage, gaps, and improvement suggestions.
+
+## Phase 6: Requirements Added After the Initial Review
+
+- [x] **Task 6.1 — Company field end to end:** Add Company to the persisted model, request/response
+  contract, server validation, form, edit initialization, and Details panel above Job Description.
+  Add mapping, serialization, validation, service/controller, and frontend coverage (**AC04–AC05,
+  AC07–AC09, AC15**).
+- [x] **Task 6.2 — Safe Markdown details:** Render Job Description and Required Qualifications
+  with Markdown formatting, with raw HTML disabled and generated markup sanitized. Keep all other
+  values rendered as text. Add tests for formatting and unsafe markup (**AC16**).
+- [x] **Task 6.3 — Consistent job-offer buttons:** Apply the New Job Offer visual style to all
+  job-offer buttons and enforce `0.75rem` font size and `35px` height. Add style or browser-level
+  verification for actions, list selection, form, and discard controls (**AC17**).
+- [x] **Task 6.4 — Final acceptance review:** Run relevant backend and frontend suites, verify
+  AC01–AC17 against the requirements, and update the reviewer report and task status after review.

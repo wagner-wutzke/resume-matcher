@@ -72,6 +72,7 @@ public class JobOfferService {
   private JobOffer toJobOffer(String id, JobOfferRequest request) {
     return new JobOffer(
         id,
+        request.company(),
         request.jobName(),
         request.jobDescription(),
         request.requiredQualifications(),
