@@ -3,7 +3,7 @@
 > **Current scope:** This is the canonical specification for job-offer management. The original
 > read-only baseline in `.codex/specs/01-recruiter-application/` is historical and superseded here.
 
-- **Status:** [ ] Draft | [x] Approved for Design | [ ] In Implementation | [ ] Completed
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-11-26
 
@@ -19,12 +19,11 @@ panel.
 
 #### Job offer list and details
 
-- [ ] Item 1: On the Open Position's tab, selecting a job offer in the list displays the position
+- [ ] Item 1: On the Open Positions tab, selecting a job offer in the list displays the position
   details in the **Details panel** (right-side panel).
 - [ ] Item 2: When a job offer is selected, display an **Edit** button above the Details panel. When
   no job offer is selected, hide the **Edit** button.
-- [ ] Item 3: Display a New Job Offer button above the Details panel. This button is available
-  whether a job offer is selected.
+- [ ] Item 3: Display a **New Job Offer** button above the Details panel at all times.
 
 #### Create and edit form
 
@@ -42,17 +41,20 @@ panel.
   the saved offer is selected, update the Details panel as well.
 - [ ] Item 10: After a successful save, the job offer must be selected in the list.
 - [ ] Item 11: A failed save keeps the modal open and shows an error message.
-
-#### Additional fields
-
 - [ ] Item 12: The Allocation field is required and offers these values: **Remote**, **Hybrid**, and
   **On-site**.
+- [ ] Item 13: Provide a required **Company** field for the hiring company's name. In the Details
+  panel, display Company above the Job Description section.
+- [ ] Item 14: Render Job Description and Required Qualifications as Markdown in the Details panel.
+- [ ] Item 15: Use the same visual style as **New Job Offer** for all buttons in the job-offer
+  feature, including list selection, action, form, and discard-confirmation buttons. Set them to a
+  font size of `0.75rem` and a height of `35px`.
 
 #### Delete
 
-- [ ] Item 13: Display a **Delete** button above the Details panel when a job offer is selected;
+- [ ] Item 16: Display a **Delete** button above the Details panel when a job offer is selected;
   hide it when no job offer is selected.
-- [ ] Item 14: The recruiter can delete a saved job offer. After a successful deletion, remove it
+- [ ] Item 17: The recruiter can delete a saved job offer. After a successful deletion, remove it
   from persisted data and the job-offer list. If the deleted offer was selected, clear the Details
   panel.
 
@@ -64,13 +66,15 @@ panel.
 
 - **BR01 — Single selection:** At most one job offer is selected and displayed in the Details panel
   at a time.
-- **BR02 — Required values:** Job Name, Job Description, Required Qualifications, Location, and
-  Allocation are required for a job offer.
+- **BR02 — Required values:** Company, Job Name, Job Description, Required Qualifications,
+  Location, and Allocation are required for a job offer.
 - **BR03 — Allocation values:** Allocation must be one of **Remote**, **Hybrid**, or **On-site**.
 - **BR04 — Persistence outcomes:** A create, edit, or delete operation changes persisted data and
   the displayed state only when it succeeds. On failure, keep the existing data and display state.
 - **BR05 — Discarding edits:** If a form has unsaved changes, the recruiter must confirm before
   discarding them. An unchanged form can be canceled without a discard prompt.
+- **BR06 — Button styling:** All buttons in the job-offer feature use the same visual style as
+  **New Job Offer**, with a font size of `0.75rem` and a height of `35px`.
 
 ## 4. Acceptance Criteria
 
@@ -100,8 +104,8 @@ These scenarios must be validated and verified by the `@reviewer`.
 
 - **Given** the recruiter is viewing the Open Positions tab
 - **When** they click **New Job Offer**
-- **Then** a modal opens with an empty form containing Job Name, Job Description, Required
-  Qualifications, Location, and Allocation fields, plus **Cancel** and **Save** buttons.
+- **Then** a modal opens with an empty form containing Company, Job Name, Job Description,
+  Required Qualifications, Location, and Allocation fields, plus **Cancel** and **Save** buttons.
 
 ### AC05 — Required-field validation
 
@@ -110,8 +114,8 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **Then** no save is performed, the modal remains open, each empty field has a red border and an
   accessible indication that it is required, and fields with values are not marked as empty.
 - **And** required-field validation errors are not displayed before the recruiter attempts to save.
-- **And** Job Name, Job Description, Required Qualifications, Location, and Allocation are all
-  required.
+- **And** Company, Job Name, Job Description, Required Qualifications, Location, and Allocation
+  are all required.
 
 ### AC06 — Allocation choices
 
@@ -124,7 +128,7 @@ These scenarios must be validated and verified by the `@reviewer`.
 
 - **Given** a job offer is selected
 - **When** the recruiter clicks **Edit**
-- **Then** the same form modal opens with the selected job offer’s current Job Name, Job
+- **Then** the same form modal opens with the selected job offer’s current Company, Job Name, Job
   Description, Required Qualifications, Location, and Allocation values loaded.
 
 ### AC08 — Successfully creating a job offer
@@ -185,4 +189,23 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **When** the recruiter attempts to delete it and persistence fails
 - **Then** the job offer remains in the list and in the Details panel, and an error message is
   shown.
+
+### AC15 — Company field and details display
+
+- **Given** the recruiter is creating or editing a job offer
+- **Then** the form includes a required Company field for the hiring company's name.
+- **When** a job offer is displayed in the Details panel
+- **Then** its Company value appears above the Job Description section.
+
+### AC16 — Markdown content in job details
+
+- **Given** a job offer has Markdown in its Job Description or Required Qualifications
+- **When** the offer is displayed in the Details panel
+- **Then** those fields are displayed with their Markdown formatting.
+
+### AC17 — Job-offer button sizing
+
+- **Given** a job-offer management button is displayed
+- **Then** its visual style matches **New Job Offer**, its font size is `0.75rem`, and its height
+  is `35px`.
 

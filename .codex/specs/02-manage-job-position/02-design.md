@@ -6,41 +6,50 @@
 
 ## 1. Architecture
 
-Extend the existing Spring Boot SPA with job-offer create, update, and delete API operations. Keep
-the single-page frontend in `src/main/resources/static` using HTML, CSS, Bootstrap, and vanilla
-JavaScript. Spring MVC serves the page and `/api` endpoints. Spring Data MongoDB persists offers
-in the existing `job_offers` collection.
+Extend the existing Spring Boot single-page application with job-offer list, create, update, and
+delete behavior. Spring MVC serves the page and `/api` endpoints. The static frontend remains in
+`src/main/resources/static` and uses HTML, CSS, Bootstrap, and vanilla JavaScript. Spring Data
+MongoDB persists offers in the existing `job_offers` collection.
 
-Use the existing base package `net.wowdev.ai.resume.matcher`. Keep the feature in a small cohesive
-`joboffer` package containing the MongoDB document, repository, service, request/response DTOs, and
-controller. The service owns validation and create/update/delete behavior so controller endpoints
-remain thin. Keep UI selection state in the browser; there is no separate active-position field in
-MongoDB. At most one offer is selected in the Details panel at a time.
+Keep the feature in the existing `net.wowdev.ai.resume.matcher` package structure with a MongoDB
+document, repository, service, request/response DTOs, and controller. The service owns validation
+and persistence behavior; controller endpoints remain thin. Keep selection state in the browser,
+with at most one offer selected in the Details panel.
 
-Read the MongoDB URI from `MONGODB_URI`, with
-`mongodb://localhost:27017/resume_matcher` as the local default. Keep credentials out of
-source-controlled configuration.
+Read the MongoDB URI from `application.properties`, with
+
+- `spring.mongodb.host=localhost`
+- `spring.mongodb.port=27017`
+- `spring.mongodb.username=admin`
+- `spring.mongodb.password=secretpassword`
+- `spring.mongodb.database=resume_matcher`
+- `spring.mongodb.authentication-database=admin`
+  as the local default. Keep credentials out of source-controlled configuration.
 
 ## 2. Job-Offer Data
 
-Continue using the existing `job_offers` collection and `JobOffer` document. MongoDB `_id` maps to
-the API's `id`. The editable fields are:
+Continue using the `job_offers` collection. MongoDB `_id` maps to the API's `id`. The editable
+fields are:
 
-| API field | Meaning | Validation |
-| --- | --- | --- |
-| `jobName` | Job name | Required |
-| `jobDescription` | Job description | Required |
-| `requiredQualifications` | Required qualifications | Required |
-| `location` | Job location | Required |
-| `allocation` | Work allocation | Required; one of `Remote`, `Hybrid`, `On-site` |
+| API field                | Meaning                                          | Validation                                     |
+|--------------------------|--------------------------------------------------|------------------------------------------------|
+| `company`                | Hiring company name                              | Required                                       |
+| `jobTitle`               | Job Title                                        | Required                                       |
+| `jobDescription`         | Job description, stored as Markdown text         | Required                                       |
+| `requiredQualifications` | Required qualifications, stored as Markdown text | Required                                       |
+| `yearsOfExperience`      | Required years of experience                     | Required                                       |
+| `location`               | Job location                                     | Required                                       |
+| `allocation`             | Work allocation                                  | Required; one of `Remote`, `Hybrid`, `On-site` |
 
-The server validates every field for create and update. Treat a blank or whitespace-only value as
-empty. Do not create seed records or introduce other persistence changes for this feature.
+
+The server validates all six fields for create and update. Treat blank or whitespace-only values
+as empty. Do not seed records or make persistence changes beyond these fields and the identifier.
 
 ## 3. REST API
 
-All job-offer endpoints use `/api/job-offers`. Successful response objects use `id`, `jobName`,
-`jobDescription`, `requiredQualifications`, `location`, and `allocation`.
+All job-offer endpoints use `/api/job-offers`. Successful response objects use `id`, `company`,
+`jobTitle`, `jobDescription`, `requiredQualifications`, `yearsOfExperience`, `location`, and 
+`allocation`.
 
 ### `GET /api/job-offers`
 
@@ -48,7 +57,7 @@ Return all offers with `200 OK`. An empty collection returns `[]`.
 
 ### `POST /api/job-offers`
 
-Create an offer from the five editable fields. The server generates the MongoDB identifier and
+Create an offer from the six editable fields. The server generates the MongoDB identifier and
 returns the saved offer with `201 Created` and a `Location` header pointing to
 `/api/job-offers/{id}`.
 
@@ -71,7 +80,7 @@ For invalid create/update values, return `400 Bad Request` with a field-addressa
   "code": "JOB_OFFER_VALIDATION_FAILED",
   "message": "The job offer is invalid.",
   "fieldErrors": {
-    "jobName": "required",
+    "company": "required",
     "allocation": "unsupported value"
   }
 }
@@ -86,73 +95,85 @@ or internal exception details.
 
 ### List and details
 
-- Load offers from `GET /api/job-offers` on page load. Keep the read-only baseline's empty and
-  retrieval-error states.
+- Load offers from `GET /api/job-offers` on page load. Preserve the existing empty and retrieval
+  error states.
 - Selecting an offer makes it the only selected list item and displays its details in the right
   panel.
-- Show **New Job Offer** above the Details panel regardless of selection.
-- Show **Edit** and **Delete** above the Details panel only while an offer is selected.
+- Display Company above the Job Description section in the Details panel.
+- Keep **New Job Offer** visible above the Details panel at all times. Show **Edit** and **Delete**
+  there only while an offer is selected.
+- Apply the same visual style as **New Job Offer** to every button in the job-offer feature,
+  including list selection, action, form, and discard-confirmation buttons. Set each to `0.75rem`
+  font size and `35px` height.
 
 ### Create and edit modal
 
-Use one modal and one form for both modes. New mode starts with empty values. Edit mode starts with
-the selected offer's values. The form contains labeled controls for Job Name, Job Description,
-Required Qualifications, Location, and Allocation, plus **Cancel** and **Save** buttons. Allocation
-is a select control containing exactly `Remote`, `Hybrid`, and `On-site`.
+Use one modal and form for both modes. New mode starts with empty values. Edit mode loads the
+selected offer's Company, Job Name, Job Description, Required Qualifications, Location, and
+Allocation values. Provide labeled controls for all six fields, plus **Cancel** and **Save**.
+Allocation is a select containing exactly `Remote`, `Hybrid`, and `On-site`.
 
-Validate on Save submission. Do not show required-field validation before the first submit attempt.
-On an invalid attempt, keep the modal open, mark each empty field with the specified red border,
-and expose the error through an accessible relationship to its field (for example, `aria-invalid`
-and an associated error description). Do not mark valid fields as empty.
+Validate on Save submission. Do not display required-field errors before the first Save attempt.
+On an invalid attempt, keep the modal open, mark each empty field with a red border, and expose an
+accessible required indication associated with that field. Do not mark valid fields as empty.
 
 Track the original form values on open. Cancel closes an unchanged form immediately. If values have
 changed, show an in-app confirmation prompt with actions to discard or continue editing. Discard
-closes the modal without sending a write request; continue editing closes the prompt and preserves
+closes the modal without sending a write request. Continue editing closes the prompt and preserves
 the current form values.
+
+### Markdown display
+
+Store Job Description and Required Qualifications as Markdown source text. In the Details panel,
+render their Markdown formatting with a client-side Markdown renderer. Disable raw HTML in the
+source and sanitize generated markup before inserting it into the document. Render Company, Job
+Name, Location, Allocation, list labels, and error messages as text.
 
 ### Successful writes
 
-- After a successful create, close the modal, add the returned offer to the list, select it, and
-  show its details.
-- After a successful update, close the modal, update the list entry, keep that offer selected, and
-  show the returned values in the Details panel.
-- After a successful delete, remove the offer from the list and clear the Details panel. With no
-  selected offer, hide **Edit** and **Delete**; **New Job Offer** remains visible.
+- After successful creation, close the modal, add the returned offer to the list, select it, and
+  display its details.
+- After successful update, close the modal, update the list entry, keep that offer selected, and
+  display the returned values.
+- After successful deletion, remove the offer from the list and clear the Details panel. Hide
+  **Edit** and **Delete** when no offer is selected; keep **New Job Offer** visible.
 
 ### Failed writes
 
-- If create or update fails, keep the modal and values open and display the server error. Do not
-  update the list or Details panel as if the write had succeeded.
-- If delete fails, keep the offer selected in the list and Details panel and display the server
-  error.
-- Render all job-offer values and error text as text, not HTML.
-
-## 5. Error Handling
-
-- Distinguish validation errors (`400`) from missing offers (`404`) and unavailable persistence
-  (`503`).
-- Client-side validation provides immediate visible and accessible field feedback only after Save
-  is attempted; server-side validation remains authoritative.
-- Preserve form values after failed saves so the recruiter can correct or retry.
+- If create or update fails, keep the modal and entered values open and display the error. Do not
+  update the list or Details panel as though the write succeeded.
+- If delete fails, keep the offer selected in the list and Details panel and display the error.
 - Do not mutate browser state until the corresponding write request succeeds.
+
+## 5. Error Handling and Security
+
+- Distinguish validation errors (`400`), missing offers (`404`), and unavailable persistence
+  (`503`).
+- Client-side required validation provides visible and accessible field feedback only after Save is
+  attempted; server-side validation remains authoritative.
+- Preserve form values after failed saves so the recruiter can correct or retry.
 - Do not expose stack traces, database details, or credentials in API responses.
+- Render Markdown with raw HTML disabled and sanitize generated markup. Treat all non-Markdown
+  values and error text as text.
 
 ## 6. Verification Mapping
 
-| Requirement | Design verification |
-| --- | --- |
-| AC01–AC03, AC12: selection and action visibility | UI tests check single selection and the visibility rules for Edit, New Job Offer, and Delete. |
-| AC04: new form | UI test opens New Job Offer and checks blank fields and form actions. |
-| AC05–AC06: validation and allocation | Form tests check deferred validation, accessible errors, required fields, and the exact allocation options. |
-| AC07: edit form | UI test opens Edit and checks every field is initialized from the selected offer. |
-| AC08–AC09: successful create/update | API and UI tests verify persisted response values, modal close, list update, selection, and details update. |
-| AC10: cancel/discard | UI tests cover unchanged cancel, discard, and continue editing with values preserved. |
-| AC11: failed save | API failure test plus UI test verify modal and values remain and saved state does not change. |
-| AC13–AC14: delete success/failure | API and UI tests verify persistence outcomes, list/details state, and error handling. |
+| Requirement                                      | Design verification                                                                                      |
+|--------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| AC01–AC03, AC12: selection and action visibility | UI tests check single selection and New Job Offer, Edit, and Delete visibility.                          |
+| AC04, AC07: create/edit forms                    | UI tests check all six fields, empty new values, and values loaded for editing.                          |
+| AC05–AC06: validation and allocation             | Tests check deferred required-field validation, accessible errors, and exact allocation choices.         |
+| AC08–AC09: successful create/update              | API and UI tests check stored/returned values, modal close, list update, selection, and details.         |
+| AC10: cancel/discard                             | UI tests cover unchanged cancel, discard, and continue editing with values preserved.                    |
+| AC11: failed save                                | API and UI tests check the open modal, preserved values, error, and unchanged saved state.               |
+| AC13–AC14: delete success/failure                | API and UI tests check persistence outcomes, list/details state, and errors.                             |
+| AC15: Company field and display order            | UI and API tests check Company is required, saved, loaded, and displayed above Job Description.          |
+| AC16: Markdown details                           | UI tests check Markdown formatting in Job Description and Required Qualifications.                       |
+| AC17: button styling                             | UI/style tests check all job-offer buttons match New Job Offer, use `0.75rem` text, and are `35px` high. |
 
 ## 7. Boundaries
 
 - Do not add candidate persistence, candidate ingestion, matching, or ranking behavior.
-- Do not add job-offer fields beyond the five specified editable fields and MongoDB `id`.
+- Do not add job-offer fields beyond the six specified editable fields and MongoDB `id`.
 - Do not add authentication or authorization behavior in this feature.
-- Keep all implementation behavior traceable to `01-requirements.md`.
+- Keep implementation behavior traceable to `01-requirements.md`.

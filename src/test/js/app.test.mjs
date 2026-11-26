@@ -60,7 +60,11 @@ class FakeElement {
 
   querySelectorAll(selector) {
     const className = selector.slice(1);
-    return this.children.filter((child) => child.classes.has(className));
+    const matches = this.children.filter((child) => child.classes.has(className));
+    const nodeList = { length: matches.length };
+    nodeList.forEach = (callback) => matches.forEach(callback);
+    matches.forEach((match, index) => { nodeList[index] = match; });
+    return nodeList;
   }
 
   click() {
@@ -136,9 +140,12 @@ test("renders offers and selected details as text", async () => {
     ok: true,
     json: async () => [{
       id: "offer-1",
-      jobName: "Backend Engineer",
+      jobId: "BE-00100010",
+      company: "Example Company",
+      jobTitle: "Backend Engineer",
       jobDescription: markupLikeText,
       requiredQualifications: "Java and Spring",
+      yearsOfExperience: 7,
       location: "Dublin",
       allocation: "Remote",
     }],
@@ -154,8 +161,10 @@ test("renders offers and selected details as text", async () => {
   assert.equal(list.children[0].attributes.get("aria-pressed"), "true");
   const detailText = elements.get("#position-details").textContent;
   assert.match(detailText, /Backend Engineer/);
+  assert.match(detailText, /Example Company/);
   assert.match(detailText, /<img src=x onerror=alert\(1\)>/);
   assert.match(detailText, /Java and Spring/);
+  assert.match(detailText, /7/);
   assert.match(detailText, /Dublin/);
   assert.match(detailText, /Remote/);
 });
@@ -168,8 +177,43 @@ test("leaves the list and details empty for an empty response", async () => {
   assert.equal(elements.get("#position-details").textContent, "");
 });
 
+test("loads the catalog once and labels offers with their job titles", async () => {
+  const requests = [];
+  const elements = runApp(async (url) => {
+    requests.push(url);
+    return {
+      ok: true,
+      json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
+    };
+  });
+  await flushApp();
+
+  assert.deepEqual(requests, ["/api/job-offers"]);
+  assert.equal(elements.get("#position-list").children[0].textContent, "Backend Engineer");
+});
+
+test("does not preselect a returned offer", async () => {
+  const elements = runApp(async () => ({
+    ok: true,
+    json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
+  }));
+  await flushApp();
+
+  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-pressed"), "false");
+  assert.equal(elements.get("#position-details").textContent, "");
+});
+
 test("shows a distinct error when the request fails", async () => {
   const elements = runApp(async () => { throw new Error("unavailable"); });
+  await flushApp();
+
+  assert.equal(elements.get("#position-list").textContent, "Unable to load open positions");
+  assert.equal(elements.get("#position-list").classList.contains("load-error"), true);
+  assert.equal(elements.get("#position-details").textContent, "");
+});
+
+test("shows a distinct error for an unsuccessful API response", async () => {
+  const elements = runApp(async () => ({ ok: false, status: 503 }));
   await flushApp();
 
   assert.equal(elements.get("#position-list").textContent, "Unable to load open positions");
@@ -202,6 +246,8 @@ test("shows edit and delete actions only when an offer is selected", async () =>
   buttons[1].click();
   assert.equal(buttons[0].attributes.get("aria-pressed"), "false");
   assert.equal(buttons[1].attributes.get("aria-pressed"), "true");
+  assert.match(elements.get("#position-details").textContent, /Designer/);
+  assert.doesNotMatch(elements.get("#position-details").textContent, /Engineer/);
 });
 
 test("opens an empty job-offer form from New Job Offer", async () => {
