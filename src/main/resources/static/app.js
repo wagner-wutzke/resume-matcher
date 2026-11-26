@@ -38,6 +38,7 @@ const detailFields = [
   ["Company", "company"],
   ["Job description", "jobDescription", true],
   ["Required qualifications", "requiredQualifications", true],
+  ["Years of experience", "yearsOfExperience"],
   ["Location", "location"],
   ["Allocation", "allocation"],
 ];
@@ -47,7 +48,7 @@ function setText(element, value) {
 }
 
 function positionLabel(position) {
-  return position.jobName ?? "";
+  return position.jobTitle ?? position.jobName ?? "";
 }
 
 function renderMarkdown(element, value) {
@@ -138,7 +139,10 @@ function openEditOfferForm() {
   formMode = "edit";
   modalTitle.textContent = "Edit Job Offer";
   offerFields.forEach((field) => {
-    field.value = selectedPosition[field.name] == null ? "" : String(selectedPosition[field.name]);
+    const value = field.name === "jobName"
+      ? positionLabel(selectedPosition)
+      : selectedPosition[field.name];
+    field.value = value == null ? "" : String(value);
   });
   clearValidation();
   clearFormError();

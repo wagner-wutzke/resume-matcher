@@ -9,7 +9,8 @@
 The implementation follows the SPA Skeleton design for read-only catalog retrieval, the updated
 catalog fields, list selection, Details display, failure handling, safe text rendering, and
 individual MongoDB connection properties. MongoDB username and password remain optional runtime
-properties; no `spring.mongodb.uri` setting is configured.
+properties and are supplied through Spring's standard environment properties when configured; no
+`spring.mongodb.uri` setting is configured.
 
 The catalog data path uses a dedicated read-only MongoDB repository. The existing job-offer
 create/update/delete endpoints and controls are part of `02-manage-job-position` and were not
@@ -25,29 +26,31 @@ removed or extended as part of this feature.
 | AC07–AC08 | Catalog mapping/controller tests and frontend tests cover all seven details and replacement of the selected offer.                                   |
 | AC09      | Controller test verifies the stable `503` response; frontend tests cover rejected and unsuccessful requests.                                         |
 | AC10      | Frontend test verifies markup-like text remains literal text.                                                                                        |
-| AC11      | Catalog repository exposes only `findAll`; the read-only catalog adds no write methods. CRUD remains in the separately specified management feature. |
+| AC11      | `JobOfferCatalogRepository` exposes only `findAll`; SPA Skeleton changes add no CRUD. Existing management CRUD belongs to its separately specified feature. |
 | AC12      | `MongoConfigurationTest` verifies individual settings, environment overrides, and the absence of `spring.mongodb.uri`.                               |
 
 ## Test Runs
 
-- `mvn -q test` — 48 tests passed.
-- `node src/test/js/app.test.mjs` — 20 tests passed.
+- `mvn -q test` — 51 tests passed, with no failures or errors.
+- `node src/test/js/app.test.mjs` — 23 tests passed.
 
 ## Identified Gap
 
-AC11 says to inspect the SPA and API and find no job-offer write controls or operations. The
-combined
-application does contain those controls and operations because `02-manage-job-position` requires
-them. This review interprets AC11 as applying to behavior introduced by the SPA Skeleton feature,
-consistent with the later feature's separate ownership. The requirements should state this boundary
-explicitly so AC11 does not conflict with the combined application.
+`02-design.md` still documents empty defaults for `spring.mongodb.username` and
+`spring.mongodb.password`. Spring Boot interprets these empty values as configured authentication,
+which prevents application context startup. The implementation correctly omits the properties when
+credentials are absent and allows the standard `SPRING_MONGODB_USERNAME` and
+`SPRING_MONGODB_PASSWORD` environment properties when authentication is configured. Update the
+design configuration example to match the verified implementation.
 
 ## Improvement Suggestion
 
-Update AC11 to say that the SPA Skeleton feature introduces no create, update, or delete behavior;
-the later job-offer management feature owns those operations. Keep the current CRUD behavior.
+Keep the MongoDB credential properties absent by default; document the environment property names
+used to supply them. AC11's feature boundary is now clear in the requirements and design: CRUD
+owned by the separate management feature does not violate this feature's read-only scope.
 
 ## Review Outcome
 
-Implementation and tests are complete for the resolved feature scope. Reviewer approval of the
-overall feature remains conditional on clarifying AC11 in the requirements.
+Implementation and acceptance tests pass. The AC11 scope is resolved. Reviewer approval remains
+conditional on updating the MongoDB configuration example in `02-design.md` to match the tested
+optional-credentials behavior; the feature remains active until that documentation is reconciled.

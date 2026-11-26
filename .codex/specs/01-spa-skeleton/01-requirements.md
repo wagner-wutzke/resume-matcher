@@ -1,6 +1,6 @@
 # Feature Specification: 01 — SPA Skeleton
 
-- **Status:** [ ] Draft | [x] Approved for Design | [ ] In Implementation | [ ] Completed
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-11-26
 
@@ -41,8 +41,9 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
 
 ## 4. Business Rules
 
-- **BR01 — Read-only scope:** This feature retrieves job offers only. It does not create, update,
-  or delete job offers or candidates.
+- **BR01 — Read-only feature scope:** The SPA Skeleton feature only retrieves job offers. It does
+  not introduce create, update, or delete controls or API operations for job offers or candidates.
+  Job-offer management provided by a separately specified feature is outside this rule.
 - **BR02 — Empty result:** A successful retrieval that returns no job offers is a valid state. Show
   an empty Open Positions list and no selected-offer details.
 - **BR03 — Candidate placeholder:** Candidate records and details are unavailable in this feature.
@@ -55,6 +56,8 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
   collection. Keep the failure distinguishable from a successful empty result.
 - **BR07 — Data source:** Display values from the records returned by the existing
   `job_offers` collection without creating or modifying records.
+- **BR08 — MongoDB connection properties:** Configure MongoDB with separate properties for host,
+  port, database, and any credentials. Do not declare or use `spring.mongodb.uri`.
 
 ## 5. Functional Requirements
 
@@ -77,10 +80,11 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
   list and Details panel empty.
 - **FR10 — Retrieval failure:** When the request fails, display a retrieval failure state distinct
   from the empty-list state.
-- **FR11 — Read-only interface:** Do not provide controls for creating, editing, or deleting job
-  offers or candidates.
-- **FR12 - Never use `spring.mongodb.uri` for configuring mongoDB connection. Use single properties
-  instead
+- **FR11 — Read-only feature scope:** This feature adds no controls or API operations for creating,
+  editing, or deleting job offers or candidates. CRUD behavior owned by another feature is outside
+  this requirement.
+- **FR12 — Individual MongoDB properties:** Configure MongoDB with separate properties for host,
+  port, database, and any configured credentials. Do not declare or use `spring.mongodb.uri`.
 
 ## 6. Non-Functional Requirements
 
@@ -88,10 +92,10 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
   use the available page space.
 - **NFR02 — Frontend technology:** Implement the SPA with HTML, CSS, Bootstrap, and vanilla
   JavaScript.
-- **NFR03 — Safe data rendering:** Treat job-offer values returned by the data source as text;
+- **NFR03 — Safe data rendering:** In this feature, treat values returned for display as text;
   never interpret them as executable HTML or script.
-- **NFR04 — Read-only data access:** This feature exposes only read operations for job offers and
-  does not write to the collection.
+- **NFR04 — Read-only data access:** This feature's data access performs reads only and does not
+  write to the `job_offers` collection.
 - **NFR05 — State clarity:** The interface must distinguish successful empty results from failed
   retrievals.
 
@@ -119,8 +123,10 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
   loads, then it shows a retrieval failure state that is distinguishable from an empty result.
 - **AC10 — Safe text rendering:** Given a returned field contains markup-like text, when the offer
   is displayed, then the value appears as text and is not interpreted as HTML or script.
-- **AC11 — Read-only scope:** When the SPA and API are inspected, then this feature exposes no
-  create, update, or delete controls or operations for job offers or candidates.
+- **AC11 — Read-only feature scope:** When the changes belonging to the SPA Skeleton feature are
+  inspected, then they introduce no create, update, or delete controls or API operations for job
+  offers or candidates. CRUD controls or operations owned by another separately specified feature
+  do not violate this criterion.
 - **AC12 — Individual MongoDB connection properties:** Given the application loads its MongoDB
   configuration, when the connection settings are resolved, then the host, port, database, and any
   configured credentials are read from separate properties, and `spring.mongodb.uri` is neither

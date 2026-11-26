@@ -5,7 +5,7 @@ import net.wowdev.ai.resume.matcher.model.JobOffer;
 public record JobOfferResponse(
     String id,
     String company,
-    String jobName,
+    String jobTitle,
     String jobDescription,
     String requiredQualifications,
     String location,
@@ -15,7 +15,7 @@ public record JobOfferResponse(
     return new JobOfferResponse(
         offer.id(),
         offer.company(),
-        offer.jobName(),
+        offer.jobTitle(),
         offer.jobDescription(),
         offer.requiredQualifications(),
         offer.location(),

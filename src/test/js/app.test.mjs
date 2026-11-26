@@ -157,9 +157,10 @@ test("renders offers and selected details as text", async () => {
       id: "offer-1",
       jobId: "BE-00100010",
       company: "Example Company",
-      jobName: "Backend Engineer",
+      jobTitle: "Backend Engineer",
       jobDescription: markupLikeText,
       requiredQualifications: "Java and Spring",
+      yearsOfExperience: 7,
       location: "Dublin",
       allocation: "Remote",
     }],
@@ -179,8 +180,18 @@ test("renders offers and selected details as text", async () => {
   assert.ok(detailText.indexOf("Example Company") < detailText.indexOf(markupLikeText));
   assert.match(detailText, /<img src=x onerror=alert\(1\)>/);
   assert.match(detailText, /Java and Spring/);
+  assert.match(detailText, /7/);
+  assert.match(detailText, /Years of experience/);
   assert.match(detailText, /Dublin/);
   assert.match(detailText, /Remote/);
+});
+
+test("uses the specified palette, page space, and responsive split layout", () => {
+  assert.match(page, /bootstrap@5\.3\.3\/dist\/css\/bootstrap\.min\.css/);
+  assert.match(styles, /--ink:\s*#343a40;/);
+  assert.match(styles, /--royal-blue:\s*#4169e1;/);
+  assert.match(styles, /\.app-shell\s*\{[^}]*min-height:\s*100vh;/s);
+  assert.match(styles, /@media\s*\(max-width:\s*700px\)[\s\S]*?grid-template-columns:\s*1fr;/);
 });
 
 test("renders Markdown after disabling raw HTML and sanitizing generated markup", async () => {
@@ -230,7 +241,7 @@ test("loads the catalog once and labels offers with their job titles", async () 
     requests.push(url);
     return {
       ok: true,
-      json: async () => [{ id: "offer-1", jobName: "Backend Engineer" }],
+      json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
     };
   });
   await flushApp();
@@ -242,7 +253,7 @@ test("loads the catalog once and labels offers with their job titles", async () 
 test("does not preselect a returned offer", async () => {
   const elements = runApp(async () => ({
     ok: true,
-    json: async () => [{ id: "offer-1", jobName: "Backend Engineer" }],
+    json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
   }));
   await flushApp();
 
@@ -272,8 +283,8 @@ test("shows edit and delete actions only when an offer is selected", async () =>
   const elements = runApp(async () => ({
     ok: true,
     json: async () => [
-      { jobName: "Engineer" },
-      { jobName: "Designer" },
+      { jobTitle: "Engineer" },
+      { jobTitle: "Designer" },
     ],
   }));
   await flushApp();

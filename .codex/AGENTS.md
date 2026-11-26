@@ -81,7 +81,8 @@ This agent transforms specifications into functional and tested code.
 ### Required Workflow
 
 1. Read specifications from `/specs`
-2. Generate `03-tasks.md` if it does not exist
+2. Confirm the architect has created `03-tasks.md`; if it is missing, request that the architect
+   create it before implementation begins
 3. Implement based on the tasks
 4. Create automated tests
 5. Ensure all acceptance criteria pass
@@ -98,6 +99,7 @@ This agent transforms specifications into functional and tested code.
 - Do not invent requirements that are not described
 - Do not change behavior without updating the spec
 - Do not modify files inside `/specs`
+- Do not create or update specification and task documents; request changes from the @architect
 - Do not implement functionality outside the specification
 
 ## Agent: Review Agent (@reviewer)

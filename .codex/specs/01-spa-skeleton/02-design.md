@@ -6,14 +6,18 @@
 
 ## 1. Architecture
 
-Use a Spring Boot web application to serve a static single-page frontend and a read-only API. The
-frontend uses HTML, CSS, Bootstrap, and vanilla JavaScript. Spring MVC serves files from
-`src/main/resources/static` and handles `/api` routes. Spring Data MongoDB reads existing job-offer
-records from MongoDB.
+Use a Spring Boot web application to serve a static single-page frontend and a read-only job-offer
+catalog path for this feature. The frontend uses HTML, CSS, Bootstrap, and vanilla JavaScript.
+Spring MVC serves files from `src/main/resources/static` and handles `/api` routes. Spring Data
+MongoDB reads existing job-offer records from MongoDB. Create, update, and delete behavior owned by
+the separately specified job-offer management feature is outside this design and remains governed
+by that feature.
 
-Keep API code within the existing `net.wowdev.ai.resume.matcher` package, organized into cohesive
-job-offer model, repository, and controller components. A separate service layer is optional and
-should be added only if it provides behavior beyond the repository call.
+Keep API code within the existing `net.wowdev.ai.resume.matcher` package. Use a dedicated
+read-only catalog repository exposing only the required read operation, a catalog response DTO,
+and the existing MVC routing patterns. A separate service layer is optional and should be added
+only if it provides behavior beyond the repository call. This feature adds no write method or
+write control.
 
 The SPA entry point is `src/main/resources/static/index.html`, with CSS and JavaScript in adjacent
 static assets. Serve the application at `http://localhost:8080`.
@@ -147,13 +151,15 @@ or display candidate data.
 | AC06–AC08: selection and details                 | Load populated records, confirm no initial selection, then select offers and verify all seven required detail fields and single-selection behavior. |
 | AC09: retrieval failure                          | Simulate an unavailable API/database and confirm a distinct failure state.                                                                          |
 | AC10: safe text rendering                        | Return markup-like field content and confirm it appears literally without HTML interpretation.                                                      |
-| AC11: read-only scope                            | Inspect API routes and UI controls; confirm this feature exposes only offer retrieval and no write operations.                                      |
+| AC11: read-only feature scope                    | Inspect changes belonging to SPA Skeleton and confirm they add no job-offer or candidate write controls or API operations. Separate management-feature CRUD is outside this criterion. |
 | AC12: individual MongoDB properties              | Verify separate host, port, database, and optional credential properties are used and `spring.mongodb.uri` is absent.                              |
 
 ## 8. Design Boundaries
 
 - Do not add candidate API or candidate persistence behavior.
-- Do not add create, update, or delete operations for candidates or job offers.
+- Do not add create, update, or delete controls or API operations for candidates or job offers as
+  part of the SPA Skeleton feature. Operations owned by another separately specified feature are
+  outside this boundary.
 - Do not add search, matching, ranking, recommendation, authentication, or authorization behavior.
 - Keep implementation consistent with `01-requirements.md`; update that specification before
   changing behavior.

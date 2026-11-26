@@ -48,7 +48,9 @@ class SpaApplicationTest {
   void candidateTabHasEmptyListAndDetailsRegions() throws Exception {
     mockMvc.perform(get("/index.html"))
         .andExpect(status().isOk())
-        .andExpect(content().string(org.hamcrest.Matchers.containsString("class=\"candidate-list\"")))
-        .andExpect(content().string(org.hamcrest.Matchers.containsString("aria-label=\"Selected candidate details\"")));
+        .andExpect(content().string(org.hamcrest.Matchers.containsString(
+            "class=\"candidate-list\" aria-live=\"polite\"></div>")))
+        .andExpect(content().string(org.hamcrest.Matchers.containsString(
+            "aria-label=\"Selected candidate details\"></section>")));
   }
 }

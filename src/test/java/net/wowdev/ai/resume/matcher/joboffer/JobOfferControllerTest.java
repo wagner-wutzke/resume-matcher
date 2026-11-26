@@ -47,16 +47,18 @@ class JobOfferControllerTest {
   @Test
   void returnsAllOfferFields() throws Exception {
     when(catalogRepository.findAll()).thenReturn(List.of(new JobOfferCatalogEntry(
-        "offer-1", "Example Company", "Backend Engineer", "Build services",
-        "Java and Spring", "Dublin", "Remote")));
+        "offer-1", "BE-00100010", "Example Company", "Backend Engineer", "Build services",
+        "Java and Spring", 7, "Dublin", "Remote")));
 
     mockMvc.perform(get("/api/job-offers"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value("offer-1"))
+        .andExpect(jsonPath("$[0].jobId").value("BE-00100010"))
         .andExpect(jsonPath("$[0].company").value("Example Company"))
-        .andExpect(jsonPath("$[0].jobName").value("Backend Engineer"))
+        .andExpect(jsonPath("$[0].jobTitle").value("Backend Engineer"))
         .andExpect(jsonPath("$[0].jobDescription").value("Build services"))
         .andExpect(jsonPath("$[0].requiredQualifications").value("Java and Spring"))
+        .andExpect(jsonPath("$[0].yearsOfExperience").value(7))
         .andExpect(jsonPath("$[0].location").value("Dublin"))
         .andExpect(jsonPath("$[0].allocation").value("Remote"));
   }

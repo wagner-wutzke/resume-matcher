@@ -56,8 +56,8 @@ Write the design file, then summarize the main decisions and any unresolved requ
 
 ## Phase 3: Task Breakdown (@architect)
 
-Prepare the task file before implementation. The engineer workflow can then follow its required
-task file without modifying other specification documents.
+The architect owns creation and updates to the task file. The engineer implements only tasks that
+the architect has documented and does not modify specification files.
 
 ```text
 Act as @architect defined in `.codex/AGENTS.md`.
@@ -76,7 +76,9 @@ Do not write project code. Summarize the task order and dependencies after savin
 
 ## Phase 4: Atomic Implementation (@engineer)
 
-Use this prompt once per task. Do not combine separate tasks in one execution.
+Use this prompt once per task. Do not combine separate tasks in one execution. If the task file or
+requested task is missing, ask the architect to add it before implementation; do not create or edit
+the task file as the engineer.
 
 ```text
 Act as @engineer defined in `.codex/AGENTS.md`.

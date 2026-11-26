@@ -8,8 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Field;
 public record JobOffer(
     @Id String id,
     String company,
-    @Field("jobTitle")
-    String jobName,
+    String jobTitle,
     String jobDescription,
     String requiredQualifications,
     String location,
