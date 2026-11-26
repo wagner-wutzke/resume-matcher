@@ -33,14 +33,28 @@ let formMode = "create";
 let originalFormValues = [];
 
 const detailFields = [
+  ["Company", "company"],
   ["Job description", "jobDescription"],
   ["Required qualifications", "requiredQualifications"],
+  ["Years of experience", "yearsOfExperience"],
   ["Location", "location"],
   ["Allocation", "allocation"],
 ];
 
 function setText(element, value) {
   element.textContent = value == null ? "" : String(value);
+}
+
+function positionLabel(position) {
+  return position.jobTitle ?? position.jobName ?? "";
+}
+
+function findPositionButton(positionId) {
+  const buttons = positionList.querySelectorAll(".position-button");
+  for (let index = 0; index < buttons.length; index += 1) {
+    if (buttons[index].dataset.jobOfferId === String(positionId)) return buttons[index];
+  }
+  return null;
 }
 
 function setSelectionActions(hasSelection) {
@@ -61,7 +75,7 @@ function showPosition(position, selectedButton) {
 
   const title = document.createElement("h2");
   title.className = "detail-title";
-  setText(title, position.jobName);
+  setText(title, positionLabel(position));
   positionDetails.append(title);
 
   const details = document.createElement("dl");
@@ -89,7 +103,7 @@ function renderPositions(nextPositions) {
     button.className = "position-button";
     button.type = "button";
     button.dataset.jobOfferId = String(position.id ?? "");
-    button.textContent = position.jobName == null ? "" : String(position.jobName);
+    button.textContent = String(positionLabel(position));
     button.setAttribute("aria-pressed", "false");
     button.addEventListener("click", () => showPosition(position, button));
     positionList.append(button);
@@ -171,7 +185,8 @@ async function saveNewOffer(event) {
   const savedPosition = await response.json();
   positions = [...positions, savedPosition];
   renderPositions(positions);
-  const createdButton = positionList.querySelectorAll(".position-button").at(-1);
+  const buttons = positionList.querySelectorAll(".position-button");
+  const createdButton = buttons[buttons.length - 1];
   showPosition(savedPosition, createdButton);
   bootstrap.Modal.getOrCreateInstance(modalElement).hide();
 }
@@ -190,8 +205,7 @@ async function saveEditedOffer(event) {
   const updatedPosition = await response.json();
   positions = positions.map((position) => position.id === updatedPosition.id ? updatedPosition : position);
   renderPositions(positions);
-  const updatedButton = positionList.querySelectorAll(".position-button")
-    .find((button) => button.dataset.jobOfferId === String(updatedPosition.id));
+  const updatedButton = findPositionButton(updatedPosition.id);
   showPosition(updatedPosition, updatedButton);
   bootstrap.Modal.getOrCreateInstance(modalElement).hide();
 }

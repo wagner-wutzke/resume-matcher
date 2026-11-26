@@ -1,6 +1,6 @@
 # Feature Specification: 01 — SPA Skeleton
 
-- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+- **Status:** [ ] Draft | [x] Approved for Design | [ ] In Implementation | [ ] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-11-26
 
@@ -41,74 +41,98 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
 
 ## 4. Business Rules
 
-- **BR01 — Read-only job offers:** This feature only reads job offers. It does not create, update,
-  or delete records.
-- **BR02 — Empty collection:** A `job_offers` collection with no records is a valid state and is
-  displayed as an empty list.
-- **BR03 — Candidate phase state:** No candidates are shown in this phase. The candidate list and
-  candidate details area remain empty until candidate ingestion is implemented.
-- **BR04 — Selection:** Job details are shown only after a recruiter selects a job offer from the
-  list.
+- **BR01 — Read-only scope:** This feature retrieves job offers only. It does not create, update,
+  or delete job offers or candidates.
+- **BR02 — Empty result:** A successful retrieval that returns no job offers is a valid state. Show
+  an empty Open Positions list and no selected-offer details.
+- **BR03 — Candidate placeholder:** Candidate records and details are unavailable in this feature.
+  Keep both Candidates content areas empty.
+- **BR04 — Selection:** Do not select an offer automatically. Show offer details only after the
+  user selects an item from the Open Positions list.
+- **BR05 — Single selection:** At most one offer is selected at a time; selecting another offer
+  replaces the current selection and details.
+- **BR06 — Retrieval failure:** A failed job-offer request is an error state, not an empty
+  collection. Keep the failure distinguishable from a successful empty result.
+- **BR07 — Data source:** Display values from the records returned by the existing
+  `job_offers` collection without creating or modifying records.
 
 ## 5. Functional Requirements
 
-- **FR01:** Serve the SPA from `http://localhost:8080`.
-- **FR02:** Display the application name **Resume Matcher** and title **Candidates Matching made
-  easy**.
-- **FR03:** Provide the **Candidates** and **Open Positions** tabs.
-- **FR04:** In the Candidates tab, provide a left-side list area and a right-side details area;
-  both contain no candidate records in this phase.
-- **FR05:** On application load, retrieve all job offers from the MongoDB `job_offers` collection.
-- **FR06:** Display each retrieved job offer in the left-side Open Positions list.
-- **FR07:** When a job offer is selected, show its job name, job description, required
-  qualifications, location, and allocation in the right-side details area.
-- **FR08:** When there are no job offers, show an empty list and leave the details area empty.
-- **FR09:** If job offers cannot be retrieved, show a failure state distinct from the empty-list
-  state.
+- **FR01 — Serve the SPA:** Serve the application at `http://localhost:8080`.
+- **FR02 — Application identity:** Display the name **Resume Matcher** and title **Candidates
+  Matching made easy**.
+- **FR03 — Main navigation:** Provide **Candidates** and **Open Positions** tabs.
+- **FR04 — Candidate placeholder:** In the Candidates tab, provide a left-side list area and a
+  right-side details area; neither displays candidate records or details.
+- **FR05 — Retrieve job offers:** On application load, request all existing job-offer records
+  through `GET /api/job-offers`.
+- **FR06 — List job offers:** On successful retrieval, display each returned offer in the
+  Open Positions list using its job title.
+- **FR07 — Initial selection state:** After offers load, leave no offer selected and the Details
+  panel empty.
+- **FR08 — Select and display an offer:** When the user selects an offer, show its Company, Job
+  Title, Job Description, Required Qualifications, Years of Experience, Location, and Allocation
+  in the Details panel. Selecting another offer replaces the displayed details.
+- **FR09 — Empty collection:** When retrieval succeeds with no records, leave the Open Positions
+  list and Details panel empty.
+- **FR10 — Retrieval failure:** When the request fails, display a retrieval failure state distinct
+  from the empty-list state.
+- **FR11 — Read-only interface:** Do not provide controls for creating, editing, or deleting job
+  offers or candidates.
+- **FR12 - Never use `spring.mongodb.uri` for configuring mongoDB connection. Use single properties
+  instead
 
 ## 6. Non-Functional Requirements
 
-- **NFR01 — Visual design:** Use a simple dark gray and royal blue palette and make the application use the
-  available page space.
-- **NFR02 — Frontend technology:** Use HTML, CSS, Bootstrap, and vanilla JavaScript for the SPA.
-- **NFR03 — Data presentation:** Display job-offer values as text; values returned from the data
-  source must not be interpreted as executable markup.
-- **NFR04 — Read-only behavior:** The application must not expose controls or operations for
-  creating, editing, or deleting job offers or candidates.
+- **NFR01 — Visual design:** Use a simple dark gray and royal blue palette and let the application
+  use the available page space.
+- **NFR02 — Frontend technology:** Implement the SPA with HTML, CSS, Bootstrap, and vanilla
+  JavaScript.
+- **NFR03 — Safe data rendering:** Treat job-offer values returned by the data source as text;
+  never interpret them as executable HTML or script.
+- **NFR04 — Read-only data access:** This feature exposes only read operations for job offers and
+  does not write to the collection.
+- **NFR05 — State clarity:** The interface must distinguish successful empty results from failed
+  retrievals.
 
 ## 7. Acceptance Criteria
 
 - **AC01 — Application availability:** Given the application is running, when a user opens
   `http://localhost:8080`, then the Resume Matcher SPA is served.
-- **AC02 — Identity and navigation:** When the SPA is displayed, then it shows the name **Resume
-  Matcher**, the title **Candidates Matching made easy**, and the **Candidates** and **Open
-  Positions** tabs.
-- **AC03 — Candidate placeholder:** When the Candidates tab is opened, then its left-side list and
-  right-side details area contain no candidate records or candidate details.
-- **AC04 — Empty job-offer collection:** Given `job_offers` contains no records, when the Open
-  Positions view loads, then the left-side list is empty and the right-side details area is empty.
-- **AC05 — Job-offer retrieval:** Given `job_offers` contains records, when the Open Positions view
-  loads, then the SPA retrieves the records and displays each job offer in the left-side list.
-- **AC06 — Selected job details:** Given one or more job offers are listed, when a user selects a
-  job offer, then the right-side details area displays its job name, job description, required
-  qualifications, location, and allocation.
-- **AC07 — No preselected job:** When the Open Positions view first loads, then no job offer is
-  selected and the right-side details area is empty.
-- **AC08 — Retrieval failure:** Given job offers cannot be retrieved, when the Open Positions view
-  loads, then the SPA displays a retrieval failure state that is distinguishable from an empty
-  collection.
-- **AC09 — Text rendering:** Given a job-offer field contains markup-like text, when its details are
-  displayed, then the value is shown as text and is not interpreted as HTML.
-- **AC10 — Scope boundary:** The SPA provides no controls for creating, editing, or deleting
-  candidates or job offers.
+- **AC02 — Identity and navigation:** When the SPA is displayed, then it shows **Resume Matcher**,
+  **Candidates Matching made easy**, and the **Candidates** and **Open Positions** tabs.
+- **AC03 — Candidate placeholder:** When the Candidates tab is opened, then its list and details
+  areas contain no candidate records or details.
+- **AC04 — Job-offer retrieval and list:** Given `job_offers` contains records, when the SPA loads,
+  then it requests `GET /api/job-offers` and displays each returned job title in the Open Positions
+  list.
+- **AC05 — Empty job-offer result:** Given retrieval succeeds and returns no records, when the
+  Open Positions view loads, then its list and Details panel are empty.
+- **AC06 — No preselected offer:** Given one or more offers are returned, when the Open Positions
+  view first loads, then no offer is selected and the Details panel is empty.
+- **AC07 — Selected offer details:** Given one or more offers are listed, when the user selects an
+  offer, then the Details panel displays its Company, Job Title, Job Description, Required
+  Qualifications, Years of Experience, Location, and Allocation.
+- **AC08 — Single selection:** Given an offer is selected, when the user selects another offer,
+  then only the latter offer is selected and its details replace the previous details.
+- **AC09 — Retrieval failure:** Given the job-offer request fails, when the Open Positions view
+  loads, then it shows a retrieval failure state that is distinguishable from an empty result.
+- **AC10 — Safe text rendering:** Given a returned field contains markup-like text, when the offer
+  is displayed, then the value appears as text and is not interpreted as HTML or script.
+- **AC11 — Read-only scope:** When the SPA and API are inspected, then this feature exposes no
+  create, update, or delete controls or operations for job offers or candidates.
+- **AC12 — Individual MongoDB connection properties:** Given the application loads its MongoDB
+  configuration, when the connection settings are resolved, then the host, port, database, and any
+  configured credentials are read from separate properties, and `spring.mongodb.uri` is neither
+  declared nor used.
 
 ## 8. Error Cases
 
-- **Job-offer retrieval failure:** The application cannot reach MongoDB or the job-offer request
-  fails. The Open Positions view shows a retrieval failure state and does not represent the failure
-  as an empty collection.
-- **Empty job-offer result:** Retrieval succeeds but returns no records. The list and details area
-  remain empty; this is not an error.
+- **Job-offer retrieval failure:** The API request fails, including when the API cannot read from
+  MongoDB. Return an unsuccessful response (the API design specifies `503 Service Unavailable`).
+  Show a retrieval failure state and do not present the result as an empty collection.
+- **Empty job-offer result:** Retrieval succeeds with `200 OK` and an empty array. Show an empty
+  list and empty Details panel; this is a valid state, not an error.
 
 ## 9. Out of Scope
 

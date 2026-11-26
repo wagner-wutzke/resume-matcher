@@ -4,6 +4,8 @@ import net.wowdev.ai.resume.matcher.controller.JobOfferController;
 import net.wowdev.ai.resume.matcher.controller.JobOfferExceptionHandler;
 import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
 import net.wowdev.ai.resume.matcher.model.JobOffer;
+import net.wowdev.ai.resume.matcher.model.JobOfferCatalogEntry;
+import net.wowdev.ai.resume.matcher.repository.JobOfferCatalogReadRepository;
 import net.wowdev.ai.resume.matcher.service.JobOfferNotFoundException;
 import net.wowdev.ai.resume.matcher.service.JobOfferPersistenceException;
 import net.wowdev.ai.resume.matcher.service.JobOfferService;
@@ -32,33 +34,38 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class JobOfferControllerTest {
 
   private final JobOfferService service = mock(JobOfferService.class);
+  private final JobOfferCatalogReadRepository catalogRepository = mock(JobOfferCatalogReadRepository.class);
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(new JobOfferController(service))
+    mockMvc = MockMvcBuilders.standaloneSetup(new JobOfferController(service, catalogRepository))
         .setControllerAdvice(new JobOfferExceptionHandler())
         .build();
   }
 
   @Test
   void returnsAllOfferFields() throws Exception {
-    when(service.findAll()).thenReturn(List.of(new JobOffer(
-        "offer-1", "Backend Engineer", "Build services", "Java and Spring", "Dublin", "Remote")));
+    when(catalogRepository.findAll()).thenReturn(List.of(new JobOfferCatalogEntry(
+        "offer-1", "BE-00100010", "Example Company", "Backend Engineer", "Build services",
+        "Java and Spring", 7, "Dublin", "Remote")));
 
     mockMvc.perform(get("/api/job-offers"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value("offer-1"))
-        .andExpect(jsonPath("$[0].jobName").value("Backend Engineer"))
+        .andExpect(jsonPath("$[0].jobId").value("BE-00100010"))
+        .andExpect(jsonPath("$[0].company").value("Example Company"))
+        .andExpect(jsonPath("$[0].jobTitle").value("Backend Engineer"))
         .andExpect(jsonPath("$[0].jobDescription").value("Build services"))
         .andExpect(jsonPath("$[0].requiredQualifications").value("Java and Spring"))
+        .andExpect(jsonPath("$[0].yearsOfExperience").value(7))
         .andExpect(jsonPath("$[0].location").value("Dublin"))
         .andExpect(jsonPath("$[0].allocation").value("Remote"));
   }
 
   @Test
   void returnsEmptyArrayWhenThereAreNoOffers() throws Exception {
-    when(service.findAll()).thenReturn(List.of());
+    when(catalogRepository.findAll()).thenReturn(List.of());
 
     mockMvc.perform(get("/api/job-offers"))
         .andExpect(status().isOk())
@@ -68,7 +75,8 @@ class JobOfferControllerTest {
 
   @Test
   void reportsRepositoryFailureAsServiceUnavailable() throws Exception {
-    when(service.findAll()).thenThrow(new DataAccessResourceFailureException("MongoDB unavailable"));
+    when(catalogRepository.findAll()).thenThrow(
+        new DataAccessResourceFailureException("MongoDB unavailable"));
 
     mockMvc.perform(get("/api/job-offers"))
         .andExpect(status().isServiceUnavailable())

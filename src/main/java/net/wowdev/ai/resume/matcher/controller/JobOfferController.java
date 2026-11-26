@@ -2,8 +2,10 @@ package net.wowdev.ai.resume.matcher.controller;
 
 import java.net.URI;
 import java.util.List;
+import net.wowdev.ai.resume.matcher.dto.JobOfferCatalogResponse;
 import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
 import net.wowdev.ai.resume.matcher.dto.JobOfferResponse;
+import net.wowdev.ai.resume.matcher.repository.JobOfferCatalogReadRepository;
 import net.wowdev.ai.resume.matcher.service.JobOfferService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,14 +22,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class JobOfferController {
 
   private final JobOfferService service;
+  private final JobOfferCatalogReadRepository catalogRepository;
 
-  public JobOfferController(JobOfferService service) {
+  public JobOfferController(
+      JobOfferService service,
+      JobOfferCatalogReadRepository catalogRepository) {
     this.service = service;
+    this.catalogRepository = catalogRepository;
   }
 
   @GetMapping
-  public List<JobOfferResponse> list() {
-    return service.findAll().stream().map(JobOfferResponse::from).toList();
+  public List<JobOfferCatalogResponse> list() {
+    return catalogRepository.findAll().stream().map(JobOfferCatalogResponse::from).toList();
   }
 
   @PostMapping

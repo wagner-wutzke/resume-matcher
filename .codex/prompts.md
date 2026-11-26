@@ -1,116 +1,121 @@
+---
+title: "prompts.md"
+author: "Wagner O. Wutzke"
+date: 2026-11-26
+tags: [ specification, requirement ]
+status: [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+---
 # Prompt Playbook: [Short Feature Name]
 
-This file contains copy-pasteable system prompts to transition the Codex agent across different SDD
-phases. Always reference `AGENTS.md` before executing these.
+Copy-pasteable prompts for the repository's SDD phases. Read `.codex/AGENTS.md` before using a
+prompt. Replace `[FEATURE_NAME]` with the feature directory name (for example,
+`01-spa-skeleton`). Feature documents live under `.codex/specs/[FEATURE_NAME]/`.
 
 ---
 
-## 🛠️ Phase 1: Requirements Discovery (@architect)
+## Phase 1: Requirements Discovery (@architect)
 
-*Use this prompt when starting a brand-new feature from scratch with just a raw idea.*
+Use this prompt when starting a feature from an initial idea.
 
 ```text
-Act as @architect defined in AGENTS.md. 
+Act as @architect defined in `.codex/AGENTS.md`.
 
-We are starting a new feature: [INSERT BRIEF FEATURE IDEA]. 
-Do NOT generate any project code yet. Your sole task is to initialize or update 
-`specs/[FEATURE_NAME]/01-requirements.md` using our standard template. 
+We are starting a feature: [INSERT BRIEF FEATURE IDEA]. Do not generate project code.
+Review the repository context and create `.codex/specs/[FEATURE_NAME]/01-requirements.md` using
+the expected structure in `.codex/AGENTS.md`.
 
-Ask me clarifying questions one by one regarding the Feature Scope, Business Rules, or Acceptance 
-Criteria until you have enough clarity to draft the full requirement specification.
-Replace `[FEATURE_NAME]` by the current feature name (e.g. 01-recruiter-application).
+Ask concise clarifying questions one at a time when important requirements cannot be inferred.
+Capture the objective, context, scope, business rules, functional and non-functional requirements,
+acceptance criteria, error cases, and out-of-scope items. Do not add behavior that has not been
+requested. Summarize any assumptions that remain.
 ```
 
 ---
 
-## 📐 Phase 2: Technical Design Blueprint (@architect)
+## Phase 2: Technical Design (@architect)
 
-*Use this prompt after `01-requirements.md` is approved, and you need to figure out data models and
-APIs.*
+Use this prompt after the requirements are approved.
 
 ```text
-Act as @architect defined in AGENTS.md. 
+Act as @architect defined in `.codex/AGENTS.md`.
 
-Review the approved requirements in `specs/[FEATURE_NAME]/01-requirements.md`. 
-We need to design the technical implementation and document it inside `specs/[FEATURE_NAME]/02-design.md`. 
+Read `.codex/specs/[FEATURE_NAME]/01-requirements.md` and inspect the existing codebase patterns.
+Create or update `.codex/specs/[FEATURE_NAME]/02-design.md` so each design decision traces to an
+approved requirement.
 
-Please analyze our existing codebase architecture (tech stack, folder structures, database patterns)
- and draft the design specification, including:
-1. Necessary database schema changes/migrations
-2. API endpoint contracts (HTTP methods, payloads, responses)
-3. Essential logic flow, edge cases, and security measures (like hashing or rate limiting)
+Describe the architecture, data model and persistence changes if required, API contracts if
+required, UI and logic flow, relevant error handling, security considerations required by the
+specification, and verification mapping to every acceptance criterion. Do not add generic features
+such as hashing, rate limiting, or schema migrations unless the requirements call for them. If a
+needed behavior is unspecified, ask the user instead of inventing it.
 
-Present the markdown structure for `specs/[FEATURE_NAME]/02-design.md` now.
-Replace `[FEATURE_NAME]` by the current feature name (e.g. 01-recruiter-application).
+Write the design file, then summarize the main decisions and any unresolved requirement gaps.
 ```
 
 ---
 
-## 📝 Phase 3: Task Breakdown Generation (@architect)
+## Phase 3: Task Breakdown (@architect)
 
-*Use this prompt to force Codex to decompose the design document into micro-steps before writing
-code.*
+Prepare the task file before implementation. The engineer workflow can then follow its required
+task file without modifying other specification documents.
 
 ```text
-Act as @architect defined in AGENTS.md. 
+Act as @architect defined in `.codex/AGENTS.md`.
 
-Read `specs/[FEATURE_NAME]/01-requirements.md` and `specs/[FEATURE_NAME]/02-design.md`. 
-Your goal is to generate a comprehensive, highly granular checklist inside 
-`specs/[FEATURE_NAME]/03-tasks.md`.
+Read `.codex/specs/[FEATURE_NAME]/01-requirements.md` and
+`.codex/specs/[FEATURE_NAME]/02-design.md`. Create or update
+`.codex/specs/[FEATURE_NAME]/03-tasks.md` with small, sequential implementation tasks.
 
-Break down the implementation into atomic, sequential phases:
-- Phase 1: Database & Model layers
-- Phase 2: Services & Business Logic
-- Phase 3: API Controllers & Routing
-- Phase 4: Integration & E2E Testing
-
-Every task must be small enough to be coded in a single prompt execution without overflowing context. 
-Output the markdown for `specs/[FEATURE_NAME]/03-tasks.md`.
-Replace `[FEATURE_NAME]` by the current feature name (e.g. 01-recruiter-application).
+Derive phases from the approved design; do not force database, service, API, or UI phases when they
+do not apply. Keep each task limited to one coherent change and include the relevant acceptance
+criteria plus its focused test or verification. Include integration and review work where needed.
+Do not write project code. Summarize the task order and dependencies after saving the file.
 ```
 
 ---
 
-## 🚀 Phase 4: Atomic Execution Loop (@engineer)
+## Phase 4: Atomic Implementation (@engineer)
 
-*Use this prompt repeatedly to execute tasks. Replace [X.X] with the current task number.*
+Use this prompt once per task. Do not combine separate tasks in one execution.
 
 ```text
-Act as @engineer defined in AGENTS.md. 
+Act as @engineer defined in `.codex/AGENTS.md`.
 
-We are ready to write code. Look at `specs/03-tasks.md` and locate Task [X.X]: "[INSERT TASK NAME HERE]". 
-Read the context from `specs/[FEATURE_NAME]/01-requirements.md` and `specs/[FEATURE_NAME]/02-design.md` 
-to ensure total compliance.
+Work only on Task [X.X] — "[INSERT TASK NAME]" in
+`.codex/specs/[FEATURE_NAME]/03-tasks.md`. First read that task and the related requirements and
+design in `.codex/specs/[FEATURE_NAME]/01-requirements.md` and
+`.codex/specs/[FEATURE_NAME]/02-design.md`.
 
-Your instructions:
-1. Implement the minimal, cleanest code required to satisfy Task [X.X].
-2. Write the corresponding unit or integration test alongside the production code.
-3. Show me the code changes and where they belong in the codebase.
-4. Do NOT attempt to implement any subsequent tasks. Focus strictly on this item.
-
-Replace `[FEATURE_NAME]` by the current feature name (e.g. 01-recruiter-application).
+Implement only this task. Add or update focused automated tests for its acceptance criteria. Do not
+implement later tasks, invent requirements, or modify specification files. Run the relevant tests
+and report changed files, test results, and any blockers. The task status is updated by the reviewer
+after verification/review.
 ```
 
 ---
 
-## 🔍 Phase 5: Rigorous Code Review (@reviewer)
+## Phase 5: Code Review (@reviewer)
 
-*Use this prompt after the `@engineer` claims a task or group of tasks is completed.*
+Use this prompt after implementation and test results are available.
 
 ```text
-Act as @reviewer defined in AGENTS.md. 
+Act as @reviewer defined in `.codex/AGENTS.md`.
 
-Review the code changes generated by the engineer against the Acceptance Criteria in 
-`specs/[FEATURE_NAME]/01-requirements.md` and the Technical Design in 
-`specs/[FEATURE_NAME]/02-design.md`.
+Review the implementation for [FEATURE_NAME] against
+`.codex/specs/[FEATURE_NAME]/01-requirements.md`,
+`.codex/specs/[FEATURE_NAME]/02-design.md`, and
+`.codex/specs/[FEATURE_NAME]/03-tasks.md`. Inspect the relevant code and tests, and verify reported
+test results where possible.
 
-Audit the solution for:
-- 100% Alignment with specified Business Rules.
-- Code cleanliness, readability, and existing patterns adherence.
-- Edge case handling and proper test coverage.
+Return a report with these sections:
+- Spec compliance
+- Acceptance criteria coverage, naming evidence/tests for each criterion
+- Identified gaps or out-of-scope behavior
+- Readability and complexity observations
+- Improvement suggestions
+- Review outcome: APPROVED only if all criteria are met and no unresolved gaps remain; otherwise
+  list the required corrections.
 
-Provide a concise breakdown of any issues found, or explicitly output "APPROVED" if the code 
-satisfies all criteria so we can mark the task as complete in `specs/[FEATURE_NAME]/03-tasks.md`.
-
-Replace `[FEATURE_NAME]` by the current feature name (e.g. 01-recruiter-application).
+Do not modify implementation files, requirements, or design files during review. After verification,
+update only the task-status checkboxes in `.codex/specs/[FEATURE_NAME]/03-tasks.md`.
 ```

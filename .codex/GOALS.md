@@ -1,3 +1,10 @@
+---
+title: "GOALS.md"
+author: "Wagner O. Wutzke"
+date: 2026-11-26
+tags: [ specification, requirement ]
+status: [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+---
 # Project purpose
 
 Build a web application that uses AI-powered semantic RAG matching to compare PDF resumes with a job

@@ -1,3 +1,11 @@
+---
+title: "AGENTS.md"
+author: "Wagner O. Wutzke"
+date: 2026-11-26
+tags: [ specification, requirement ]
+status: [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+---
+
 # AGENTS.md
 
 This repository uses Spec-Driven Development (SDD).

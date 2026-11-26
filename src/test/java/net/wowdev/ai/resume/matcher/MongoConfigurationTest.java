@@ -1,6 +1,7 @@
 package net.wowdev.ai.resume.matcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -8,25 +9,48 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertySourcesPropertyResolver;
+import org.springframework.core.env.SystemEnvironmentPropertySource;
 
 class MongoConfigurationTest {
 
-  private static final String PROPERTY = "spring.mongodb.uri";
-  private static final String DEFAULT_URI = "mongodb://localhost:27017/resume_matcher";
+  private static final String HOST = "spring.mongodb.host";
+  private static final String PORT = "spring.mongodb.port";
+  private static final String DATABASE = "spring.mongodb.database";
+  private static final String USERNAME = "spring.mongodb.username";
+  private static final String PASSWORD = "spring.mongodb.password";
+  private static final String AUTHENTICATION_DATABASE = "spring.mongodb.authentication-database";
 
   @Test
-  void usesLocalUriWhenEnvironmentVariableIsNotSet() throws IOException {
+  void usesIndividualLocalDefaultsWhenEnvironmentVariablesAreNotSet() throws IOException {
     var resolver = resolverForApplicationProperties(java.util.Map.of());
 
-    assertEquals(DEFAULT_URI, resolver.getProperty(PROPERTY));
+    assertEquals("localhost", resolver.getProperty(HOST));
+    assertEquals("27017", resolver.getProperty(PORT));
+    assertEquals("resume_matcher", resolver.getProperty(DATABASE));
+    assertNull(resolver.getProperty(USERNAME));
+    assertNull(resolver.getProperty(PASSWORD));
+    assertEquals("admin", resolver.getProperty(AUTHENTICATION_DATABASE));
+    assertNull(resolver.getProperty("spring.mongodb.uri"));
   }
 
   @Test
-  void usesMongoUriEnvironmentVariableWhenSet() throws IOException {
+  void resolvesIndividualSettingsFromEnvironmentWhenSet() throws IOException {
     var resolver = resolverForApplicationProperties(
-        java.util.Map.of("MONGODB_URI", "mongodb://db.example/resume"));
+        java.util.Map.of(
+            "MONGODB_HOST", "db.example",
+            "MONGODB_PORT", "27018",
+            "MONGODB_DATABASE", "resume_test",
+            "MONGODB_AUTHENTICATION_DATABASE", "admin",
+            "SPRING_MONGODB_USERNAME", "resume_user",
+            "SPRING_MONGODB_PASSWORD", "test-secret"));
 
-    assertEquals("mongodb://db.example/resume", resolver.getProperty(PROPERTY));
+    assertEquals("db.example", resolver.getProperty(HOST));
+    assertEquals("27018", resolver.getProperty(PORT));
+    assertEquals("resume_test", resolver.getProperty(DATABASE));
+    assertEquals("resume_user", resolver.getProperty(USERNAME));
+    assertEquals("test-secret", resolver.getProperty(PASSWORD));
+    assertEquals("admin", resolver.getProperty(AUTHENTICATION_DATABASE));
+    assertNull(resolver.getProperty("spring.mongodb.uri"));
   }
 
   private PropertySourcesPropertyResolver resolverForApplicationProperties(
@@ -42,7 +66,7 @@ class MongoConfigurationTest {
     var sources = new MutablePropertySources();
     sources.addLast(new MapPropertySource("application", toMap(properties)));
     if (!environment.isEmpty()) {
-      sources.addFirst(new MapPropertySource("environment", environment));
+      sources.addFirst(new SystemEnvironmentPropertySource("environment", environment));
     }
     return new PropertySourcesPropertyResolver(sources);
   }
