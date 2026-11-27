@@ -14,15 +14,20 @@ public class JobOfferService {
 
   private final JobOfferRepository repository;
   private final JobOfferValidator validator;
+  private final JobOfferIdGenerator idGenerator;
 
-  public JobOfferService(JobOfferRepository repository, JobOfferValidator validator) {
+  public JobOfferService(
+      JobOfferRepository repository,
+      JobOfferValidator validator,
+      JobOfferIdGenerator idGenerator) {
     this.repository = repository;
     this.validator = validator;
+    this.idGenerator = idGenerator;
   }
 
   public JobOffer create(JobOfferRequest request) {
     validate(request);
-    return save(toJobOffer(null, request));
+    return save(toJobOffer(null, idGenerator.nextJobId(), request));
   }
 
   public List<JobOffer> findAll() {
@@ -33,7 +38,7 @@ public class JobOfferService {
     validate(request);
     var existing = findById(id)
         .orElseThrow(() -> new JobOfferNotFoundException(id));
-    return save(toJobOffer(existing.id(), request));
+    return save(toJobOffer(existing.id(), existing.jobId(), request));
   }
 
   public void delete(String id) {
@@ -69,13 +74,15 @@ public class JobOfferService {
     }
   }
 
-  private JobOffer toJobOffer(String id, JobOfferRequest request) {
+  private JobOffer toJobOffer(String id, String jobId, JobOfferRequest request) {
     return new JobOffer(
         id,
+        jobId,
         request.company(),
         request.jobName(),
         request.jobDescription(),
         request.requiredQualifications(),
+        request.yearsOfExperience(),
         request.location(),
         request.allocation());
   }

@@ -54,12 +54,21 @@ class JobOfferValidatorTest {
         "jobName", "required",
         "jobDescription", "required",
         "requiredQualifications", "required",
+        "yearsOfExperience", "required",
         "location", "required",
         "allocation", "required"), validator.validate(null));
   }
 
+  @Test
+  void requiresYearsOfExperience() {
+    var request = new JobOfferRequest(
+        "Example Company", "Engineer", "Build services", "Java", null, "Dublin", "Remote");
+
+    assertEquals(Map.of("yearsOfExperience", "required"), validator.validate(request));
+  }
+
   private static JobOfferRequest requestWith(String allocation) {
-    return new JobOfferRequest("Example Company", "Engineer", "Build services", "Java", "Dublin", allocation);
+    return new JobOfferRequest("Example Company", "Engineer", "Build services", "Java", 7, "Dublin", allocation);
   }
 
   private static JobOfferRequest requestWithField(String field, String value) {
@@ -68,6 +77,7 @@ class JobOfferValidatorTest {
         field.equals("jobName") ? value : "Engineer",
         field.equals("jobDescription") ? value : "Build services",
         field.equals("requiredQualifications") ? value : "Java",
+        7,
         field.equals("location") ? value : "Dublin",
         field.equals("allocation") ? value : "Remote");
   }

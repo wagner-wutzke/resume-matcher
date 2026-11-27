@@ -86,30 +86,32 @@ class JobOfferControllerTest {
 
   @Test
   void createsJobOfferAndReturnsLocationHeader() throws Exception {
-    var saved = new JobOffer("offer-1", "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote");
+    var saved = new JobOffer("offer-1", "JD-00000001", "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote");
     when(service.create(new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote"))).thenReturn(saved);
+        "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote"))).thenReturn(saved);
 
     mockMvc.perform(post("/api/job-offers")
             .contentType("application/json")
             .content("""
                 {"company":"Example Company","jobName":"Engineer","jobDescription":"Build services",
-                 "requiredQualifications":"Java","location":"Dublin","allocation":"Remote"}
+                 "requiredQualifications":"Java","yearsOfExperience":5,"location":"Dublin","allocation":"Remote"}
                 """))
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", "/api/job-offers/offer-1"))
         .andExpect(jsonPath("$.id").value("offer-1"))
+        .andExpect(jsonPath("$.jobId").value("JD-00000001"))
         .andExpect(jsonPath("$.company").value("Example Company"))
-        .andExpect(jsonPath("$.jobName").value("Engineer"))
+        .andExpect(jsonPath("$.jobTitle").value("Engineer"))
+        .andExpect(jsonPath("$.yearsOfExperience").value(5))
         .andExpect(jsonPath("$.allocation").value("Remote"));
 
     verify(service).create(new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote"));
+        "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote"));
   }
 
   @Test
   void returnsFieldErrorsForInvalidCreateRequest() throws Exception {
-    var request = new JobOfferRequest(" ", "Engineer", "Build services", "Java", "Dublin", "Remote");
+    var request = new JobOfferRequest(" ", "Engineer", "Build services", "Java", 5, "Dublin", "Remote");
     when(service.create(request)).thenThrow(new JobOfferValidationException(
         java.util.Map.of("company", "required")));
 
@@ -117,7 +119,7 @@ class JobOfferControllerTest {
             .contentType("application/json")
             .content("""
                 {"company":" ","jobName":"Engineer","jobDescription":"Build services",
-                 "requiredQualifications":"Java","location":"Dublin","allocation":"Remote"}
+                 "requiredQualifications":"Java","yearsOfExperience":5,"location":"Dublin","allocation":"Remote"}
                 """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.code").value("JOB_OFFER_VALIDATION_FAILED"))
@@ -126,26 +128,28 @@ class JobOfferControllerTest {
 
   @Test
   void updatesJobOfferAndReturnsUpdatedFields() throws Exception {
-    var updated = new JobOffer("offer-1", "Example Company", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid");
+    var updated = new JobOffer("offer-1", "JD-00000001", "Example Company", "Platform Engineer", "Build systems", "Java", 7, "Dublin", "Hybrid");
     when(service.update("offer-1", new JobOfferRequest(
-        "Example Company", "Platform Engineer", "Build systems", "Java", "Dublin", "Hybrid"))).thenReturn(updated);
+        "Example Company", "Platform Engineer", "Build systems", "Java", 7, "Dublin", "Hybrid"))).thenReturn(updated);
 
     mockMvc.perform(put("/api/job-offers/offer-1")
             .contentType("application/json")
             .content("""
                 {"company":"Example Company","jobName":"Platform Engineer","jobDescription":"Build systems",
-                 "requiredQualifications":"Java","location":"Dublin","allocation":"Hybrid"}
+                 "requiredQualifications":"Java","yearsOfExperience":7,"location":"Dublin","allocation":"Hybrid"}
                 """))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value("offer-1"))
         .andExpect(jsonPath("$.company").value("Example Company"))
-        .andExpect(jsonPath("$.jobName").value("Platform Engineer"))
+        .andExpect(jsonPath("$.jobTitle").value("Platform Engineer"))
+        .andExpect(jsonPath("$.jobId").value("JD-00000001"))
+        .andExpect(jsonPath("$.yearsOfExperience").value(7))
         .andExpect(jsonPath("$.allocation").value("Hybrid"));
   }
 
   @Test
   void returnsFieldErrorsForInvalidUpdateRequest() throws Exception {
-    var request = new JobOfferRequest("Example Company", " ", "Build systems", "Java", "Dublin", "Hybrid");
+    var request = new JobOfferRequest("Example Company", " ", "Build systems", "Java", 7, "Dublin", "Hybrid");
     when(service.update("offer-1", request)).thenThrow(new JobOfferValidationException(
         java.util.Map.of("jobName", "required")));
 
@@ -153,7 +157,7 @@ class JobOfferControllerTest {
             .contentType("application/json")
             .content("""
                 {"company":"Example Company","jobName":" ","jobDescription":"Build systems",
-                 "requiredQualifications":"Java","location":"Dublin","allocation":"Hybrid"}
+                 "requiredQualifications":"Java","yearsOfExperience":7,"location":"Dublin","allocation":"Hybrid"}
                 """))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.fieldErrors.jobName").value("required"));

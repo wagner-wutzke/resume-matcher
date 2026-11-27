@@ -19,7 +19,7 @@ class JobOfferDtoSerializationTest {
   @Test
   void serializesCreateAndUpdateRequestFields() throws Exception {
     var request = new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote");
+        "Example Company", "Engineer", "Build services", "Java", 7, "Dublin", "Remote");
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(request));
 
@@ -27,26 +27,31 @@ class JobOfferDtoSerializationTest {
     assertEquals("Engineer", json.get("jobName").asText());
     assertEquals("Build services", json.get("jobDescription").asText());
     assertEquals("Java", json.get("requiredQualifications").asText());
+    assertEquals(7, json.get("yearsOfExperience").asInt());
     assertEquals("Dublin", json.get("location").asText());
     assertEquals("Remote", json.get("allocation").asText());
-    assertEquals(6, json.size());
+    assertFalse(json.has("jobId"));
+    assertEquals(7, json.size());
   }
 
   @Test
   void serializesJobOfferResponseFields() throws Exception {
     var response = new JobOfferResponse(
-        "offer-1", "Example Company", "Engineer", "Build services", "Java", "Dublin", "Remote");
+        "offer-1", "JD-00000001", "Example Company", "Engineer", "Build services", "Java",
+        7, "Dublin", "Remote");
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(response));
 
     assertEquals("offer-1", json.get("id").asText());
+    assertEquals("JD-00000001", json.get("jobId").asText());
     assertEquals("Example Company", json.get("company").asText());
-    assertEquals("Engineer", json.get("jobName").asText());
+    assertEquals("Engineer", json.get("jobTitle").asText());
     assertEquals("Build services", json.get("jobDescription").asText());
     assertEquals("Java", json.get("requiredQualifications").asText());
+    assertEquals(7, json.get("yearsOfExperience").asInt());
     assertEquals("Dublin", json.get("location").asText());
     assertEquals("Remote", json.get("allocation").asText());
-    assertEquals(7, json.size());
+    assertEquals(9, json.size());
   }
 
   @Test

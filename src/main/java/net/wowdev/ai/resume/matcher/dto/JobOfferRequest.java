@@ -5,6 +5,7 @@ public record JobOfferRequest(
     String jobName,
     String jobDescription,
     String requiredQualifications,
+    Integer yearsOfExperience,
     String location,
     String allocation) {
 }

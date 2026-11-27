@@ -22,6 +22,9 @@ public final class JobOfferValidator {
     addRequiredError(errors, "company", request.company());
     addRequiredError(errors, "jobDescription", request.jobDescription());
     addRequiredError(errors, "requiredQualifications", request.requiredQualifications());
+    if (request.yearsOfExperience() == null) {
+      errors.put("yearsOfExperience", "required");
+    }
     addRequiredError(errors, "location", request.location());
     addRequiredError(errors, "allocation", request.allocation());
 
@@ -36,6 +39,7 @@ public final class JobOfferValidator {
     errors.put("company", "required");
     errors.put("jobDescription", "required");
     errors.put("requiredQualifications", "required");
+    errors.put("yearsOfExperience", "required");
     errors.put("location", "required");
     errors.put("allocation", "required");
   }

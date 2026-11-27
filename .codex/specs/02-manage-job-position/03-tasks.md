@@ -1,99 +1,99 @@
 # Task List: Job-Offer Management
 
-- **Status:** [ ] Ready | [ ] Active | [ ] Paused | [x] Completed
+- **Status:** [x] Ready | [ ] Active | [ ] Paused | [ ] Completed
 - **Target Agent:** @engineer
 - **Validation Agent:** @reviewer
 - **References:** `01-requirements.md`, `02-design.md`
 
-> Complete one task at a time. Keep each change within its listed scope and add focused tests for
-> the behavior introduced by that task.
+> Execute one task at a time. The design is still Draft; complete the architect clarification and
+> approval gates before implementation tasks begin. The reviewer updates task checkboxes after
+> verifying implementation and focused tests.
 
-## Phase 1: Data Access and Business Logic
+> **Task breakdown approval:** Approved by the user. The Ready status remains until Phase 0 is
+> resolved and the design is approved for implementation.
 
-- [x] **Task 1.1 — Write-capable repository methods:** Extend the job-offer repository with the
-  minimal persistence operations needed for create, lookup, update, and delete. Add focused tests
-  confirming the repository contract supports the required operations.
-- [x] **Task 1.2 — Request and error DTOs:** Define request and response types for create/update
-  and stable API error responses, preserving the documented JSON field names. Add serialization
-  tests for these types.
-- [x] **Task 1.3 — Required-field validation:** Implement server-side validation for all five
-  editable fields, including whitespace-only values and the allowed Allocation values. Add tests
-  for valid input, each missing/blank field, and unsupported Allocation values.
-- [x] **Task 1.4 — Create and update service behavior:** Implement validated create and update
-  behavior; update must find an existing offer and must not upsert. Add tests for successful create,
-  successful update, and missing identifiers.
-- [x] **Task 1.5 — Delete service behavior:** Implement deletion of an existing offer and
-  not-found behavior for unknown identifiers. Add focused success and not-found tests.
-- [x] **Task 1.6 — Persistence failure behavior:** Ensure service operations propagate or translate
-  persistence failures without representing them as successful writes. Add tests for create,
-  update, and delete failure paths.
+## Phase 1: Persistence Model and Validation
+
+- [ ] **Task 1.1 — Align job-offer persistence mapping:** Implement the approved field mapping for
+  MongoDB `_id`, `jobId`, `jobTitle`, Company, and all other approved persisted fields. Add mapping
+  tests for field names and round-trip values (**BR02–BR04, approved model/API criteria**).
+- [ ] **Task 1.2 — Define create/update DTOs:** Add request and response contracts matching the
+  approved field names, including the resolved Job Name/`jobTitle` mapping. Add JSON serialization
+  tests (**AC04, AC07–AC09, AC15**).
+- [ ] **Task 1.3 — Validate required values:** Enforce required-field and allocation rules on the
+  server, including whitespace-only values. Add tests for each missing field and unsupported
+  allocation (**BR02–BR03, AC05–AC06, AC15**).
+- [ ] **Task 1.4 — Implement create and update service behavior:** Persist valid creates and updates;
+  resolve identifiers before updates and do not upsert. Add success, validation, and not-found tests
+  (**BR04, AC08–AC09, AC11**).
+- [ ] **Task 1.5 — Implement delete service behavior:** Delete existing offers and report unknown
+  identifiers. Add success and not-found tests (**AC13–AC14**).
+- [ ] **Task 1.6 — Handle persistence failures:** Translate create, update, and delete persistence
+  failures without exposing internals or changing successful-state assumptions. Add failure-path
+  tests (**BR04, AC11, AC14**).
 
 ## Phase 2: REST API
 
-- [x] **Task 2.1 — Create endpoint:** Implement `POST /api/job-offers`, returning `201 Created`,
-  the saved offer, and a `Location` header. Add controller tests for success and invalid input.
-- [x] **Task 2.2 — Update endpoint:** Implement `PUT /api/job-offers/{id}`, returning the saved
-  offer, `400 Bad Request` for invalid values, and `404 Not Found` for unknown identifiers. Add
-  controller tests for each response.
-- [x] **Task 2.3 — Delete endpoint:** Implement `DELETE /api/job-offers/{id}`, returning
-  `204 No Content` for success and `404 Not Found` for unknown identifiers. Add controller tests.
-- [x] **Task 2.4 — Consistent API errors:** Map validation, not-found, and MongoDB failures to the
-  documented stable error codes and response statuses; exclude internal exception details. Add
-  controller tests for `400`, `404`, and `503` responses.
+- [ ] **Task 2.1 — Implement catalog and create endpoints:** Return the approved catalog fields and
+  implement create with the documented status, response, and Location header. Add populated/empty
+  catalog and create tests (**AC04–AC05, AC08, approved list criterion**).
+- [ ] **Task 2.2 — Implement update endpoint:** Implement update success, validation, and not-found
+  responses. Add controller tests for each outcome (**AC09, AC11**).
+- [ ] **Task 2.3 — Implement delete endpoint:** Implement successful deletion and not-found
+  responses. Add controller tests (**AC13–AC14**).
+- [ ] **Task 2.4 — Standardize API errors:** Return stable validation, not-found, retrieval, and
+  persistence error bodies without stack traces or internal details. Add response tests (**AC11,
+  AC14 and approved error criteria**).
 
-## Phase 3: Job-Offer Selection and Actions
+## Phase 3: Open Positions List and Details
 
-- [x] **Task 3.1 — Selection and action visibility:** Preserve single selection in the Open
-  Positions list; show **New Job Offer** at all times and show **Edit** and **Delete** only when an
-  offer is selected. Add frontend tests for selection and visibility (**AC01–AC03, AC12**).
-- [x] **Task 3.2 — New-offer modal:** Add the shared modal and empty form with the five required
-  fields and **Cancel**/**Save** actions. Add frontend tests for opening the form and its initial
-  values (**AC04**).
-- [x] **Task 3.3 — Edit form initialization:** Open the same modal in edit mode with the selected
-  offer’s current values. Add frontend tests for every initialized field (**AC07**).
-- [x] **Task 3.4 — Allocation selector:** Provide exactly **Remote**, **Hybrid**, and **On-site**
-  as Allocation choices. Add a frontend test for the available options (**AC06**).
-- [x] **Task 3.5 — Deferred accessible validation:** On Save submission, identify empty required
-  fields, mark only those fields invalid with red borders and accessible error associations, and
-  prevent the request. Do not show validation before the first Save attempt. Add frontend tests
-  covering empty and populated fields (**AC05**).
+- [ ] **Task 3.1 — Render the required offer label:** Display each offer as
+  `[jobTitle] - [company] - [jobId]` using the approved list-entry semantics. Render values as text.
+  Add tests for label content, semantics, and markup-like values (**list-format criterion, NFR-safe
+  rendering**).
+- [ ] **Task 3.2 — Implement selection and Details display:** Support one selected offer at a time;
+  display Company above Job Description and all other approved details. Add selection replacement
+  tests (**AC01, AC15**).
+- [ ] **Task 3.3 — Show New, Edit, and Delete actions appropriately:** Keep New Job Offer visible and
+  show Edit/Delete only when an offer is selected. Apply the approved element semantics and button
+  styling (**AC02–AC03, AC12, AC17**).
+- [ ] **Task 3.4 — Handle list retrieval states:** Load the catalog on application start, keep
+  successful empty results distinct from failures, and leave the Details panel empty until
+  selection (**AC04–AC06, approved empty/error criteria**).
 
-## Phase 4: Save, Cancel, and Delete Interactions
+## Phase 4: Create and Edit Form
 
-- [x] **Task 4.1 — Create success flow:** Submit valid new values; on success close the modal,
-  add the returned offer to the list, select it, and show its details. Add frontend tests (**AC08**).
-- [x] **Task 4.2 — Edit success flow:** Submit valid edited values; on success close the modal,
-  update the list, keep the offer selected, and show returned details. Add frontend tests (**AC09**).
-- [x] **Task 4.3 — Failed save flow:** On create or update failure, keep the modal and entered
-  values, show an error, and leave list/details unchanged. Add frontend tests (**AC11**).
-- [x] **Task 4.4 — Cancel and discard flow:** Close unchanged forms immediately; for changed
-  forms, show the custom discard prompt and preserve values when the recruiter chooses to continue
-  editing. Add frontend tests for discard and continue (**AC10**).
-- [x] **Task 4.5 — Delete success flow:** Delete the selected offer; on success remove it from the
-  list, clear details, and hide **Edit**/**Delete**. Add frontend tests (**AC13**).
-- [x] **Task 4.6 — Failed deletion flow:** On delete failure, keep the selected offer and details
-  visible and show an error. Add frontend tests (**AC14**).
+- [ ] **Task 4.1 — Build the new-offer form:** Open the modal with the approved required fields and
+  Cancel/Save actions; verify it starts empty (**AC04, AC15**).
+- [ ] **Task 4.2 — Initialize edit form:** Reuse the modal and populate every editable field from
+  the selected offer (**AC07**).
+- [ ] **Task 4.3 — Add allocation choices and required validation:** Offer exactly Remote, Hybrid,
+  and On-site; show accessible validation only after Save and mark only invalid fields (**AC05–AC06**).
+- [ ] **Task 4.4 — Implement create success and failure UI:** On success close the modal, refresh the
+  list, select the new offer, and display its details. On failure preserve entered values and show
+  an error (**AC08, AC11**).
+- [ ] **Task 4.5 — Implement update success and failure UI:** On success close the modal, refresh
+  the selected entry/details, and retain selection. On failure preserve form and displayed state
+  and show an error (**AC09, AC11**).
+- [ ] **Task 4.6 — Confirm discarding edits:** Close unchanged forms directly; ask for confirmation
+  when changed; preserve values when continuing to edit and discard only on confirmation (**AC10**).
 
-## Phase 5: Acceptance Verification and Review
+## Phase 5: Delete UI and Markdown Rendering
 
-- [x] **Task 5.1 — Acceptance coverage and test run:** Verify each AC01–AC14 has automated test
-  coverage and run the backend and frontend test suites. Fix failures before review.
-- [x] **Task 5.2 — Scope review:** Confirm there are no candidate data operations, all job-offer
-  changes follow the specified CRUD behaviors, and no unrequested fields or workflows were added.
-- [x] **Task 5.3 — Reviewer report:** Review implementation against the requirements and design;
-  record spec compliance, acceptance coverage, gaps, and improvement suggestions.
+- [ ] **Task 5.1 — Implement delete success and failure UI:** On success remove the selected offer
+  and clear Details; on failure retain the offer/details and show an error (**AC12–AC14**).
+- [ ] **Task 5.2 — Render Markdown safely:** Render Job Description and Required Qualifications as
+  Markdown with raw HTML disabled and sanitized output (**AC16**).
+- [ ] **Task 5.3 — Apply consistent button sizing:** Apply the approved New Job Offer style to all
+  job-offer buttons with a font size of `0.75rem` and height of `35px` (**AC17**).
 
-## Phase 6: Requirements Added After the Initial Review
+## Phase 6: Acceptance Verification and Review
 
-- [x] **Task 6.1 — Company field end to end:** Add Company to the persisted model, request/response
-  contract, server validation, form, edit initialization, and Details panel above Job Description.
-  Add mapping, serialization, validation, service/controller, and frontend coverage (**AC04–AC05,
-  AC07–AC09, AC15**).
-- [x] **Task 6.2 — Safe Markdown details:** Render Job Description and Required Qualifications
-  with Markdown formatting, with raw HTML disabled and generated markup sanitized. Keep all other
-  values rendered as text. Add tests for formatting and unsafe markup (**AC16**).
-- [x] **Task 6.3 — Consistent job-offer buttons:** Apply the New Job Offer visual style to all
-  job-offer buttons and enforce `0.75rem` font size and `35px` height. Add style or browser-level
-  verification for actions, list selection, form, and discard controls (**AC17**).
-- [x] **Task 6.4 — Final acceptance review:** Run relevant backend and frontend suites, verify
-  AC01–AC17 against the requirements, and update the reviewer report and task status after review.
+- [ ] **Task 6.1 — Verify acceptance coverage:** Map every approved acceptance criterion to
+  automated or documented browser-level verification, run relevant backend/frontend suites, and
+  resolve failures (**all ACs**).
+- [ ] **Task 6.2 — Review scope and implementation:** Confirm CRUD behavior, fields, list semantics,
+  errors, and UI match the approved requirements/design; identify out-of-scope behavior (**all ACs**).
+- [ ] **Task 6.3 — Reviewer report and status:** Record compliance, acceptance coverage, gaps, and
+  suggestions in `04-review.md`; update task status only after review. Approve the feature only when
+  no unresolved gaps remain.

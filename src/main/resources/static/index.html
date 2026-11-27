@@ -44,7 +44,8 @@
           <div class="split-view">
             <aside class="list-panel" aria-label="Open positions list">
               <div class="panel-heading"><h1>Open Positions</h1></div>
-              <div class="position-list" id="position-list" aria-live="polite"></div>
+              <div class="position-list" id="position-list" role="listbox"
+                   aria-label="Open positions" aria-live="polite"></div>
             </aside>
             <div class="details-column">
               <div class="details-actions" aria-label="Job-offer actions">
@@ -100,6 +101,11 @@
             <label class="form-label" for="required-qualifications">Required Qualifications</label>
             <textarea class="form-control" id="required-qualifications" name="requiredQualifications" rows="4" aria-describedby="required-qualifications-error"></textarea>
             <div class="invalid-feedback" id="required-qualifications-error" hidden>Required.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" for="years-of-experience">Years of Experience</label>
+            <input class="form-control" id="years-of-experience" name="yearsOfExperience" type="number" step="1" aria-describedby="years-of-experience-error">
+            <div class="invalid-feedback" id="years-of-experience-error" hidden>Required.</div>
           </div>
           <div class="mb-3">
             <label class="form-label" for="job-location">Location</label>

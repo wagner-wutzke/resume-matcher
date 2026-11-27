@@ -26,10 +26,12 @@ panel.
 - [ ] Item 3: Display a **New Job Offer** button above the Details panel at all times.
 - [ ] Item 4: Job offers are not to be displayed as buttons in the list. They are to shown in the
   format: [jobTitle] - [company] - [jobId]
+- [ ] Item 18: Assign every newly created job offer a unique sequential Job ID in the format
+  **JD-########**, starting at **JD-00000001** when no generated IDs exist.
 
 #### Create and edit form
 
-- [ ] Item 4: Clicking **New Job Offer** opens a modal containing an empty form for a new job offer.
+- [ ] Item 19: Clicking **New Job Offer** opens a modal containing an empty form for a new job offer.
 - [ ] Item 5: The form provides Cancel and Save buttons. Clicking Cancel closes the modal without
   saving. A custom confirmation prompt is to be displayed, before discarding unsaved changes.
 - [ ] Item 6: All form fields are required. If the recruiter clicks **Save** while any required
@@ -49,8 +51,9 @@ panel.
   panel, display Company above the Job Description section.
 - [ ] Item 14: Render Job Description and Required Qualifications as Markdown in the Details panel.
 - [ ] Item 15: Use the same visual style as **New Job Offer** for all buttons in the job-offer
-  feature, including list selection, action, form, and discard-confirmation buttons. Set them to a
-  font size of `0.75rem` and a height of `35px`.
+  feature, including action, form, and discard-confirmation buttons. Set them to a font size of
+  `0.75rem` and a height of `35px`. Offer list entries are not buttons and are excluded from this
+  styling requirement.
 
 #### Delete
 
@@ -59,6 +62,8 @@ panel.
 - [ ] Item 17: The recruiter can delete a saved job offer. After a successful deletion, remove it
   from persisted data and the job-offer list. If the deleted offer was selected, clear the Details
   panel.
+- [ ] Item 20: Provide a required numeric **Years of Experience** field in the create/edit form and
+  persist its value with the job offer.
 
 ### Out of Scope
 
@@ -68,8 +73,8 @@ panel.
 
 - **BR01 — Single selection:** At most one job offer is selected and displayed in the Details panel
   at a time.
-- **BR02 — Required values:** Company, Job Name, Job Description, Required Qualifications,
-  Location, and Allocation are required for a job offer.
+- **BR02 — Required values:** Company, Job Name, Job Description, Required Qualifications, Years of
+  Experience, Location, and Allocation are required for a job offer.
 - **BR03 — Allocation values:** Allocation must be one of **Remote**, **Hybrid**, or **On-site**.
 - **BR04 — Persistence outcomes:** A create, edit, or delete operation changes persisted data and
   the displayed state only when it succeeds. On failure, keep the existing data and display state.
@@ -77,6 +82,11 @@ panel.
   discarding them. An unchanged form can be canceled without a discard prompt.
 - **BR06 — Button styling:** All buttons in the job-offer feature use the same visual style as
   **New Job Offer**, with a font size of `0.75rem` and a height of `35px`.
+- **BR07 — Generated Job ID:** Generate a unique sequential Job ID for each new offer using the
+  format `JD-########`. Start at `JD-00000001` if no generated IDs exist and increment the numeric
+  suffix for each new offer. The recruiter does not enter or edit this value.
+- **BR08 — Years of Experience:** A numeric Years of Experience value is required and is persisted
+  with each job offer.
 
 ## 4. Acceptance Criteria
 
@@ -108,7 +118,8 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **Given** the recruiter is viewing the Open Positions tab
 - **When** they click **New Job Offer**
 - **Then** a modal opens with an empty form containing Company, Job Name, Job Description,
-  Required Qualifications, Location, and Allocation fields, plus **Cancel** and **Save** buttons.
+  Required Qualifications, Years of Experience, Location, and Allocation fields, plus **Cancel**
+  and **Save** buttons.
 
 ### AC05 — Required-field validation
 
@@ -117,8 +128,8 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **Then** no save is performed, the modal remains open, each empty field has a red border and an
   accessible indication that it is required, and fields with values are not marked as empty.
 - **And** required-field validation errors are not displayed before the recruiter attempts to save.
-- **And** Company, Job Name, Job Description, Required Qualifications, Location, and Allocation
-  are all required.
+- **And** Company, Job Name, Job Description, Required Qualifications, Years of Experience,
+  Location, and Allocation are all required.
 
 ### AC06 — Allocation choices
 
@@ -132,7 +143,8 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **Given** a job offer is selected
 - **When** the recruiter clicks **Edit**
 - **Then** the same form modal opens with the selected job offer’s current Company, Job Name, Job
-  Description, Required Qualifications, Location, and Allocation values loaded.
+  Description, Required Qualifications, Years of Experience, Location, and Allocation values
+  loaded.
 
 ### AC08 — Successfully creating a job offer
 
@@ -211,4 +223,29 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **Given** a job-offer management button is displayed
 - **Then** its visual style matches **New Job Offer**, its font size is `0.75rem`, and its height
   is `35px`.
+
+### AC18 — Sequential Job ID generation
+
+- **Given** the recruiter submits a valid new job-offer form
+- **When** the offer is successfully created
+- **Then** the system assigns it a unique Job ID in the format `JD-########`, beginning with
+  `JD-00000001` when no generated IDs exist and incrementing the numeric suffix for each new offer.
+- **And** the Job ID is displayed in that offer's list entry and is not an editable form field.
+
+### AC19 — Offer list entry format and semantics
+
+- **Given** one or more job offers are available
+- **When** the Open Positions list is displayed
+- **Then** each offer appears as a selectable non-button list entry with the text
+  `[jobTitle] - [company] - [jobId]`.
+
+### AC20 — Required Years of Experience field
+
+- **Given** the recruiter creates or edits a job offer
+- **Then** the form provides a required numeric Years of Experience field.
+- **When** a valid offer is saved
+- **Then** the entered Years of Experience value is persisted with the offer and returned when the
+  offer is loaded for editing.
+- **And** the Years of Experience value is displayed in the offer's Details panel, preserving the
+  SPA Skeleton's existing detail-view requirement.
 

@@ -14,6 +14,7 @@ const offerFields = [
   document.querySelector("#job-name"),
   document.querySelector("#job-description"),
   document.querySelector("#required-qualifications"),
+  document.querySelector("#years-of-experience"),
   document.querySelector("#job-location"),
   document.querySelector("#job-allocation"),
 ];
@@ -22,6 +23,7 @@ const fieldErrors = [
   document.querySelector("#job-name-error"),
   document.querySelector("#job-description-error"),
   document.querySelector("#required-qualifications-error"),
+  document.querySelector("#years-of-experience-error"),
   document.querySelector("#job-location-error"),
   document.querySelector("#job-allocation-error"),
 ];
@@ -51,6 +53,10 @@ function positionLabel(position) {
   return position.jobTitle ?? position.jobName ?? "";
 }
 
+function positionListLabel(position) {
+  return `${positionLabel(position)} - ${position.company ?? ""} - ${position.jobId ?? ""}`;
+}
+
 function renderMarkdown(element, value) {
   const markdown = value == null ? "" : String(value);
   if (typeof marked === "undefined" || typeof DOMPurify === "undefined") {
@@ -61,10 +67,10 @@ function renderMarkdown(element, value) {
   element.innerHTML = DOMPurify.sanitize(generatedMarkup);
 }
 
-function findPositionButton(positionId) {
-  const buttons = positionList.querySelectorAll(".position-button");
-  for (let index = 0; index < buttons.length; index += 1) {
-    if (buttons[index].dataset.jobOfferId === String(positionId)) return buttons[index];
+function findPositionEntry(positionId) {
+  const entries = positionList.querySelectorAll(".position-entry");
+  for (let index = 0; index < entries.length; index += 1) {
+    if (entries[index].dataset.jobOfferId === String(positionId)) return entries[index];
   }
   return null;
 }
@@ -74,13 +80,13 @@ function setSelectionActions(hasSelection) {
   deleteButton.hidden = !hasSelection;
 }
 
-function showPosition(position, selectedButton) {
+function showPosition(position, selectedEntry) {
   selectedPosition = position;
   setSelectionActions(true);
-  positionList.querySelectorAll(".position-button").forEach((button) => {
-    const selected = button === selectedButton;
-    button.classList.toggle("selected", selected);
-    button.setAttribute("aria-pressed", String(selected));
+  positionList.querySelectorAll(".position-entry").forEach((entry) => {
+    const selected = entry === selectedEntry;
+    entry.classList.toggle("selected", selected);
+    entry.setAttribute("aria-selected", String(selected));
   });
 
   positionDetails.replaceChildren();
@@ -112,14 +118,27 @@ function renderPositions(nextPositions) {
   positions = nextPositions;
   positionList.replaceChildren();
   positions.forEach((position) => {
-    const button = document.createElement("button");
-    button.className = "position-button job-offer-button";
-    button.type = "button";
-    button.dataset.jobOfferId = String(position.id ?? "");
-    button.textContent = String(positionLabel(position));
-    button.setAttribute("aria-pressed", "false");
-    button.addEventListener("click", () => showPosition(position, button));
-    positionList.append(button);
+    const entry = document.createElement("div");
+    entry.className = "position-entry";
+    entry.setAttribute("role", "option");
+    entry.setAttribute("aria-selected", "false");
+    entry.tabIndex = 0;
+    entry.dataset.jobOfferId = String(position.id ?? "");
+    setText(entry, positionListLabel(position));
+    entry.addEventListener("click", () => showPosition(position, entry));
+    entry.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showPosition(position, entry);
+      }
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        const entries = [...positionList.querySelectorAll(".position-entry")];
+        const offset = event.key === "ArrowDown" ? 1 : -1;
+        entries[(entries.indexOf(entry) + offset + entries.length) % entries.length]?.focus();
+      }
+    });
+    positionList.append(entry);
   });
 }
 
@@ -165,10 +184,13 @@ function validateOfferForm() {
   offerFields.forEach((field, index) => {
     const value = field.value == null ? "" : String(field.value);
     const blank = value.trim() === "";
+    const invalidNumber = field.name === "yearsOfExperience" && value !== ""
+      && !Number.isInteger(Number(value));
     const unsupportedAllocation = field.name === "allocation"
       && !blank
       && !["Remote", "Hybrid", "On-site"].includes(value);
-    const errorMessage = blank ? "Required." : unsupportedAllocation ? "Choose a supported allocation." : "";
+    const errorMessage = blank ? "Required." : invalidNumber ? "Enter a whole number."
+      : unsupportedAllocation ? "Choose a supported allocation." : "";
     field.classList.toggle("is-invalid", Boolean(errorMessage));
     if (errorMessage) {
       valid = false;
@@ -184,7 +206,12 @@ function validateOfferForm() {
 }
 
 function offerFormValues() {
-  return Object.fromEntries(offerFields.map((field) => [field.name, field.value]));
+  return Object.fromEntries(offerFields.map((field) => [
+    field.name,
+    field.name === "yearsOfExperience" && field.value !== ""
+      ? Number(field.value)
+      : field.value,
+  ]));
 }
 
 async function saveNewOffer(event) {
@@ -201,9 +228,9 @@ async function saveNewOffer(event) {
   const savedPosition = await response.json();
   positions = [...positions, savedPosition];
   renderPositions(positions);
-  const buttons = positionList.querySelectorAll(".position-button");
-  const createdButton = buttons[buttons.length - 1];
-  showPosition(savedPosition, createdButton);
+  const entries = positionList.querySelectorAll(".position-entry");
+  const createdEntry = entries[entries.length - 1];
+  showPosition(savedPosition, createdEntry);
   bootstrap.Modal.getOrCreateInstance(modalElement).hide();
 }
 
@@ -221,8 +248,8 @@ async function saveEditedOffer(event) {
   const updatedPosition = await response.json();
   positions = positions.map((position) => position.id === updatedPosition.id ? updatedPosition : position);
   renderPositions(positions);
-  const updatedButton = findPositionButton(updatedPosition.id);
-  showPosition(updatedPosition, updatedButton);
+  const updatedEntry = findPositionEntry(updatedPosition.id);
+  showPosition(updatedPosition, updatedEntry);
   bootstrap.Modal.getOrCreateInstance(modalElement).hide();
 }
 

@@ -157,20 +157,26 @@ body {
   border-bottom: 1px solid var(--line);
 }
 
-.position-button {
+.position-entry {
   width: 100%;
   padding: 14px;
-  border: 0;
+  border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
   color: var(--ink);
   text-align: left;
   font-size: 14px;
+  cursor: pointer;
 }
 
-.position-button:hover, .position-button.selected {
+.position-entry:hover, .position-entry.selected {
   background: var(--royal-blue-soft);
   color: #2347a8;
+}
+
+.position-entry:focus-visible {
+  outline: 3px solid rgb(65 105 225 / 30%);
+  outline-offset: 2px;
 }
 
 .job-offer-button {
@@ -200,20 +206,6 @@ body {
   outline-offset: 2px;
 }
 
-.position-button.job-offer-button {
-  width: 100%;
-  justify-content: flex-start;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.position-button.job-offer-button.selected {
-  border-color: #3156c5;
-  background: #3156c5;
-  color: #fff;
-}
-
 .load-error {
   padding: 14px;
   color: #9b4141;
@@ -232,7 +224,7 @@ body {
 }
 
 .detail-field {
-  margin: 0 0 22px;
+  margin: 0 0 10px;
 }
 
 .detail-field dt {
@@ -248,7 +240,6 @@ body {
   margin: 0;
   color: #514d58;
   font-size: 14px;
-  line-height: 1.65;
   white-space: pre-wrap;
 }
 

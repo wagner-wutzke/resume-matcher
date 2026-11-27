@@ -9,6 +9,7 @@ const styles = await readFile(new URL("../../main/resources/static/styles.css", 
 
 class FakeElement {
   constructor() {
+    this.tagName = "DIV";
     this.children = [];
     this.attributes = new Map();
     this.listeners = new Map();
@@ -72,15 +73,15 @@ class FakeElement {
 
   querySelectorAll(selector) {
     const className = selector.slice(1);
-    const matches = this.children.filter((child) => child.classes.has(className));
-    const nodeList = { length: matches.length };
-    nodeList.forEach = (callback) => matches.forEach(callback);
-    matches.forEach((match, index) => { nodeList[index] = match; });
-    return nodeList;
+    return this.children.filter((child) => child.classes.has(className));
   }
 
   click() {
     return this.listeners.get("click")?.();
+  }
+
+  focus() {
+    this.focused = true;
   }
 
   submit() {
@@ -105,12 +106,14 @@ function runApp(fetch, markdownGlobals = {}) {
     ["#job-name", new FakeElement()],
     ["#job-description", new FakeElement()],
     ["#required-qualifications", new FakeElement()],
+    ["#years-of-experience", new FakeElement()],
     ["#job-location", new FakeElement()],
     ["#job-allocation", new FakeElement()],
     ["#job-company-error", new FakeElement()],
     ["#job-name-error", new FakeElement()],
     ["#job-description-error", new FakeElement()],
     ["#required-qualifications-error", new FakeElement()],
+    ["#years-of-experience-error", new FakeElement()],
     ["#job-location-error", new FakeElement()],
     ["#job-allocation-error", new FakeElement()],
     ["#cancel-job-offer", new FakeElement()],
@@ -124,12 +127,17 @@ function runApp(fetch, markdownGlobals = {}) {
     ["#job-name", "jobName"],
     ["#job-description", "jobDescription"],
     ["#required-qualifications", "requiredQualifications"],
+    ["#years-of-experience", "yearsOfExperience"],
     ["#job-location", "location"],
     ["#job-allocation", "allocation"],
   ].forEach(([selector, name]) => { elements.get(selector).name = name; });
   const document = {
     querySelector: (selector) => elements.get(selector),
-    createElement: () => new FakeElement(),
+    createElement: (tagName) => {
+      const element = new FakeElement();
+      element.tagName = String(tagName).toUpperCase();
+      return element;
+    },
   };
   const bootstrap = {
     Modal: {
@@ -169,11 +177,13 @@ test("renders offers and selected details as text", async () => {
 
   const list = elements.get("#position-list");
   assert.equal(list.children.length, 1);
-  assert.equal(list.children[0].textContent, "Backend Engineer");
+  assert.equal(list.children[0].textContent, "Backend Engineer - Example Company - BE-00100010");
+  assert.equal(list.children[0].tagName, "DIV");
+  assert.equal(list.children[0].attributes.get("role"), "option");
   assert.equal(elements.get("#position-details").textContent, "");
 
   list.children[0].click();
-  assert.equal(list.children[0].attributes.get("aria-pressed"), "true");
+  assert.equal(list.children[0].attributes.get("aria-selected"), "true");
   const detailText = elements.get("#position-details").textContent;
   assert.match(detailText, /Backend Engineer/);
   assert.match(detailText, /Example Company/);
@@ -235,29 +245,30 @@ test("leaves the list and details empty for an empty response", async () => {
   assert.equal(elements.get("#position-details").textContent, "");
 });
 
-test("loads the catalog once and labels offers with their job titles", async () => {
+test("loads the catalog once and labels offers with title, company, and generated job ID", async () => {
   const requests = [];
   const elements = runApp(async (url) => {
     requests.push(url);
     return {
       ok: true,
-      json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
+      json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer", company: "Example Company", jobId: "JD-00000001" }],
     };
   });
   await flushApp();
 
   assert.deepEqual(requests, ["/api/job-offers"]);
-  assert.equal(elements.get("#position-list").children[0].textContent, "Backend Engineer");
+  assert.equal(elements.get("#position-list").children[0].textContent,
+    "Backend Engineer - Example Company - JD-00000001");
 });
 
 test("does not preselect a returned offer", async () => {
   const elements = runApp(async () => ({
     ok: true,
-    json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer" }],
+    json: async () => [{ id: "offer-1", jobTitle: "Backend Engineer", company: "Example Company", jobId: "JD-00000001" }],
   }));
   await flushApp();
 
-  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-pressed"), "false");
+  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-selected"), "false");
   assert.equal(elements.get("#position-details").textContent, "");
 });
 
@@ -283,8 +294,8 @@ test("shows edit and delete actions only when an offer is selected", async () =>
   const elements = runApp(async () => ({
     ok: true,
     json: async () => [
-      { jobTitle: "Engineer" },
-      { jobTitle: "Designer" },
+      { id: "offer-1", jobId: "JD-00000001", company: "Example Company", jobTitle: "Engineer" },
+      { id: "offer-2", jobId: "JD-00000002", company: "Example Inc", jobTitle: "Designer" },
     ],
   }));
   await flushApp();
@@ -295,18 +306,41 @@ test("shows edit and delete actions only when an offer is selected", async () =>
   assert.equal(edit.hidden, true);
   assert.equal(remove.hidden, true);
 
-  const buttons = elements.get("#position-list").children;
-  buttons[0].click();
+  const entries = elements.get("#position-list").children;
+  entries[0].click();
   assert.equal(edit.hidden, false);
   assert.equal(remove.hidden, false);
-  assert.equal(buttons[0].attributes.get("aria-pressed"), "true");
+  assert.equal(entries[0].attributes.get("aria-selected"), "true");
 
-  buttons[1].click();
-  assert.equal(buttons[0].attributes.get("aria-pressed"), "false");
-  assert.equal(buttons[1].attributes.get("aria-pressed"), "true");
-  assert.equal(buttons[1].classList.contains("job-offer-button"), true);
+  entries[1].click();
+  assert.equal(entries[0].attributes.get("aria-selected"), "false");
+  assert.equal(entries[1].attributes.get("aria-selected"), "true");
+  assert.equal(entries[1].classList.contains("job-offer-button"), false);
   assert.match(elements.get("#position-details").textContent, /Designer/);
   assert.doesNotMatch(elements.get("#position-details").textContent, /Engineer/);
+});
+
+test("supports keyboard focus and selection for non-button offer entries", async () => {
+  const elements = runApp(async () => ({
+    ok: true,
+    json: async () => [
+      { id: "offer-1", jobId: "JD-00000001", company: "Example", jobTitle: "Engineer" },
+      { id: "offer-2", jobId: "JD-00000002", company: "Example", jobTitle: "Designer" },
+    ],
+  }));
+  await flushApp();
+  const entries = elements.get("#position-list").children;
+  let prevented = false;
+  entries[0].listeners.get("keydown")({ key: "ArrowDown", preventDefault: () => { prevented = true; } });
+  assert.equal(prevented, true);
+  assert.equal(entries[1].focused, true);
+
+  entries[1].listeners.get("keydown")({ key: "Enter", preventDefault() {} });
+  assert.equal(entries[1].attributes.get("aria-selected"), "true");
+  assert.match(elements.get("#position-details").textContent, /Designer/);
+  entries[0].listeners.get("keydown")({ key: " ", preventDefault() {} });
+  assert.equal(entries[0].attributes.get("aria-selected"), "true");
+  assert.equal(entries[1].attributes.get("aria-selected"), "false");
 });
 
 test("uses the shared style and dimensions for job-offer buttons", () => {
@@ -318,8 +352,8 @@ test("uses the shared style and dimensions for job-offer buttons", () => {
     assert.match(button[0], /class="[^"]*job-offer-button/);
   });
   assert.match(styles, /\.job-offer-button\s*\{[^}]*height:\s*35px;[^}]*font-size:\s*0\.75rem;/s);
-  assert.match(styles, /\.position-button\.job-offer-button\s*\{/);
-  assert.match(styles, /\.position-button\.job-offer-button\.selected\s*\{/);
+  assert.match(styles, /\.position-entry\.selected\s*\{/);
+  assert.doesNotMatch(page, /<button[^>]*class="[^"]*position/);
 });
 
 test("opens an empty job-offer form from New Job Offer", async () => {
@@ -329,6 +363,7 @@ test("opens an empty job-offer form from New Job Offer", async () => {
     "#job-name",
     "#job-description",
     "#required-qualifications",
+    "#years-of-experience",
     "#job-location",
     "#job-allocation",
   ];
@@ -350,6 +385,7 @@ test("opens the shared form with selected offer values for editing", async () =>
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
+    yearsOfExperience: 5,
     location: "Dublin",
     allocation: "Remote",
   };
@@ -365,6 +401,7 @@ test("opens the shared form with selected offer values for editing", async () =>
   assert.equal(elements.get("#job-name").value, offer.jobName);
   assert.equal(elements.get("#job-description").value, offer.jobDescription);
   assert.equal(elements.get("#required-qualifications").value, offer.requiredQualifications);
+  assert.equal(elements.get("#years-of-experience").value, String(offer.yearsOfExperience));
   assert.equal(elements.get("#job-location").value, offer.location);
   assert.equal(elements.get("#job-allocation").value, offer.allocation);
 });
@@ -389,6 +426,7 @@ test("shows accessible required errors only after Save is submitted", async () =
     "#job-name",
     "#job-description",
     "#required-qualifications",
+    "#years-of-experience",
     "#job-location",
     "#job-allocation",
   ];
@@ -397,6 +435,7 @@ test("shows accessible required errors only after Save is submitted", async () =
     "#job-name-error",
     "#job-description-error",
     "#required-qualifications-error",
+    "#years-of-experience-error",
     "#job-location-error",
     "#job-allocation-error",
   ];
@@ -408,6 +447,7 @@ test("shows accessible required errors only after Save is submitted", async () =
   elements.get("#job-description").value = "Build services";
   elements.get("#job-company").value = "Example Company";
   elements.get("#required-qualifications").value = "Java";
+  elements.get("#years-of-experience").value = "5";
   elements.get("#job-location").value = "Dublin";
   elements.get("#job-allocation").value = "Remote";
   elements.get("#job-offer-form").submit();
@@ -417,16 +457,38 @@ test("shows accessible required errors only after Save is submitted", async () =
   assert.equal(elements.get("#job-name-error").hidden, false);
   assert.equal(elements.get("#job-description").classList.contains("is-invalid"), false);
   assert.equal(elements.get("#job-description-error").hidden, true);
+  assert.equal(elements.get("#years-of-experience").classList.contains("is-invalid"), false);
+  assert.equal(elements.get("#years-of-experience-error").hidden, true);
   assert.equal(fetchCount, 1);
+});
+
+test("requires a whole numeric Years of Experience value", async () => {
+  const elements = runApp(async () => ({ ok: true, json: async () => [] }));
+  await flushApp();
+  elements.get("#new-job-offer").click();
+  elements.get("#job-company").value = "Example Company";
+  elements.get("#job-name").value = "Engineer";
+  elements.get("#job-description").value = "Build services";
+  elements.get("#required-qualifications").value = "Java";
+  elements.get("#job-location").value = "Dublin";
+  elements.get("#job-allocation").value = "Remote";
+
+  await elements.get("#job-offer-form").submit();
+
+  assert.equal(elements.get("#years-of-experience").classList.contains("is-invalid"), true);
+  assert.equal(elements.get("#years-of-experience").attributes.get("aria-invalid"), "true");
+  assert.equal(elements.get("#years-of-experience-error").hidden, false);
 });
 
 test("creates, selects, and displays the returned offer after a successful save", async () => {
   const savedOffer = {
     id: "offer-2",
+    jobId: "JD-00000001",
     company: "Example Company",
     jobName: "Platform Engineer",
     jobDescription: "Build systems",
     requiredQualifications: "Java",
+    yearsOfExperience: 5,
     location: "Dublin",
     allocation: "Hybrid",
   };
@@ -442,6 +504,7 @@ test("creates, selects, and displays the returned offer after a successful save"
   elements.get("#job-name").value = savedOffer.jobName;
   elements.get("#job-description").value = savedOffer.jobDescription;
   elements.get("#required-qualifications").value = savedOffer.requiredQualifications;
+  elements.get("#years-of-experience").value = String(savedOffer.yearsOfExperience);
   elements.get("#job-location").value = savedOffer.location;
   elements.get("#job-allocation").value = savedOffer.allocation;
 
@@ -455,13 +518,14 @@ test("creates, selects, and displays the returned offer after a successful save"
     jobName: savedOffer.jobName,
     jobDescription: savedOffer.jobDescription,
     requiredQualifications: savedOffer.requiredQualifications,
+    yearsOfExperience: savedOffer.yearsOfExperience,
     location: savedOffer.location,
     allocation: savedOffer.allocation,
   });
   const list = elements.get("#position-list");
   assert.equal(list.children.length, 1);
-  assert.equal(list.children[0].textContent, savedOffer.jobName);
-  assert.equal(list.children[0].attributes.get("aria-pressed"), "true");
+  assert.equal(list.children[0].textContent, `${savedOffer.jobName} - ${savedOffer.company} - ${savedOffer.jobId}`);
+  assert.equal(list.children[0].attributes.get("aria-selected"), "true");
   assert.match(elements.get("#position-details").textContent, /Platform Engineer/);
   assert.equal(elements.get("#job-offer-modal").hidden, true);
 });
@@ -469,10 +533,12 @@ test("creates, selects, and displays the returned offer after a successful save"
 test("updates a selected offer and keeps it selected after a successful save", async () => {
   const originalOffer = {
     id: "offer-1",
+    jobId: "JD-00000001",
     company: "Example Company",
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
+    yearsOfExperience: 5,
     location: "Dublin",
     allocation: "Remote",
   };
@@ -494,8 +560,9 @@ test("updates a selected offer and keeps it selected after a successful save", a
   assert.equal(requests[1].url, "/api/job-offers/offer-1");
   assert.equal(requests[1].options.method, "PUT");
   assert.equal(elements.get("#position-list").children.length, 1);
-  assert.equal(elements.get("#position-list").children[0].textContent, updatedOffer.jobName);
-  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-pressed"), "true");
+  assert.equal(elements.get("#position-list").children[0].textContent,
+    `${updatedOffer.jobName} - ${updatedOffer.company} - ${updatedOffer.jobId}`);
+  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-selected"), "true");
   assert.match(elements.get("#position-details").textContent, /Platform Engineer/);
   assert.match(elements.get("#position-details").textContent, /Hybrid/);
   assert.equal(elements.get("#job-offer-modal").hidden, true);
@@ -514,6 +581,7 @@ test("keeps a failed create form open with values and an error message", async (
   elements.get("#job-name").value = "Engineer";
   elements.get("#job-description").value = "Build services";
   elements.get("#required-qualifications").value = "Java";
+  elements.get("#years-of-experience").value = "5";
   elements.get("#job-location").value = "Dublin";
   elements.get("#job-allocation").value = "Remote";
 
@@ -533,6 +601,7 @@ test("keeps the selected details and edit values after a failed update", async (
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
+    yearsOfExperience: 5,
     location: "Dublin",
     allocation: "Remote",
   };
@@ -601,6 +670,7 @@ test("deletes the selected offer and clears its details after success", async ()
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
+    yearsOfExperience: 5,
     location: "Dublin",
     allocation: "Remote",
   };
@@ -631,6 +701,7 @@ test("keeps the selected offer and details after a failed delete", async () => {
     jobName: "Engineer",
     jobDescription: "Build services",
     requiredQualifications: "Java",
+    yearsOfExperience: 5,
     location: "Dublin",
     allocation: "Remote",
   };
@@ -646,7 +717,7 @@ test("keeps the selected offer and details after a failed delete", async () => {
   await elements.get("#delete-job-offer").click();
 
   assert.equal(elements.get("#position-list").children.length, 1);
-  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-pressed"), "true");
+  assert.equal(elements.get("#position-list").children[0].attributes.get("aria-selected"), "true");
   assert.match(elements.get("#position-details").textContent, /Engineer/);
   assert.equal(elements.get("#edit-job-offer").hidden, false);
   assert.equal(elements.get("#delete-job-offer").hidden, false);
