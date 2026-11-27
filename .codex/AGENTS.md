@@ -3,21 +3,22 @@ title: "AGENTS.md"
 author: "Wagner O. Wutzke"
 date: 2026-11-26
 tags: [ specification, requirement ]
-status: [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
+status: Approved
 ---
 
 # AGENTS.md
 
 This repository uses Spec-Driven Development (SDD).
 
-## Technical Stack
+## Technical Specifications & Coding Standards
 
-- Webapp with vanilla JavaScript, CSS, Bootstrap and pure HTML.
-- Spring Boot, Spring Boot AI, Spring Boot WEB MVC
-- Java 21
-- Mongo DB
-- Spring Data JPA
-- Mockito
+Before writing, modifying, or reviewing any code, you **must** read and follow all rules defined
+in [TECH-SPECS.md](./TECH-SPECS.md) (including code formatting, SLF4J logging conventions, and
+testing standards).
+
+* **Primary Reference:** [TECH-SPECS.md](./TECH-SPECS.md)
+* **Rule Priority:** If any generated pattern conflicts with `TECH-SPECS.md`, the rules in
+  `TECH-SPECS.md` take precedence.
 
 ## Agents
 

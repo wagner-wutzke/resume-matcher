@@ -27,22 +27,23 @@ class MongoConfigurationTest {
     assertEquals("localhost", resolver.getProperty(HOST));
     assertEquals("27017", resolver.getProperty(PORT));
     assertEquals("resume_matcher", resolver.getProperty(DATABASE));
-    assertNull(resolver.getProperty(USERNAME));
-    assertNull(resolver.getProperty(PASSWORD));
+    assertEquals("admin", resolver.getProperty(USERNAME));
+    assertEquals("secretpassword", resolver.getProperty(PASSWORD));
     assertEquals("admin", resolver.getProperty(AUTHENTICATION_DATABASE));
     assertNull(resolver.getProperty("spring.mongodb.uri"));
   }
 
   @Test
   void resolvesIndividualSettingsFromEnvironmentWhenSet() throws IOException {
-    var resolver = resolverForApplicationProperties(
-        java.util.Map.of(
-            "MONGODB_HOST", "db.example",
-            "MONGODB_PORT", "27018",
-            "MONGODB_DATABASE", "resume_test",
-            "MONGODB_AUTHENTICATION_DATABASE", "admin",
-            "SPRING_MONGODB_USERNAME", "resume_user",
-            "SPRING_MONGODB_PASSWORD", "test-secret"));
+    var resolver =
+        resolverForApplicationProperties(
+            java.util.Map.of(
+                "MONGODB_HOST", "db.example",
+                "MONGODB_PORT", "27018",
+                "MONGODB_DATABASE", "resume_test",
+                "MONGODB_AUTHENTICATION_DATABASE", "admin",
+                "SPRING_MONGODB_USERNAME", "resume_user",
+                "SPRING_MONGODB_PASSWORD", "test-secret"));
 
     assertEquals("db.example", resolver.getProperty(HOST));
     assertEquals("27018", resolver.getProperty(PORT));
@@ -58,7 +59,8 @@ class MongoConfigurationTest {
     var properties = new Properties();
     try (var input = getClass().getClassLoader().getResourceAsStream("application.properties")) {
       if (input == null) {
-        throw new IllegalStateException("application.properties is missing from the test classpath");
+        throw new IllegalStateException(
+            "application.properties is missing from the test classpath");
       }
       properties.load(input);
     }
