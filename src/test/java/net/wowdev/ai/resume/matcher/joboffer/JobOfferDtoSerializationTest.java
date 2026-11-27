@@ -1,15 +1,14 @@
 package net.wowdev.ai.resume.matcher.joboffer;
 
-import net.wowdev.ai.resume.matcher.dto.JobOfferErrorResponse;
-import net.wowdev.ai.resume.matcher.dto.JobOfferCatalogResponse;
-import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
-import net.wowdev.ai.resume.matcher.dto.JobOfferResponse;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
+import net.wowdev.ai.resume.matcher.dto.JobOfferCatalogResponse;
+import net.wowdev.ai.resume.matcher.dto.JobOfferErrorResponse;
+import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
+import net.wowdev.ai.resume.matcher.dto.JobOfferResponse;
 import org.junit.jupiter.api.Test;
 
 class JobOfferDtoSerializationTest {
@@ -18,8 +17,9 @@ class JobOfferDtoSerializationTest {
 
   @Test
   void serializesCreateAndUpdateRequestFields() throws Exception {
-    var request = new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", 7, "Dublin", "Remote");
+    var request =
+        new JobOfferRequest(
+            "Example Company", "Engineer", "Build services", "Java", 7, "Dublin", "Remote");
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(request));
 
@@ -36,9 +36,17 @@ class JobOfferDtoSerializationTest {
 
   @Test
   void serializesJobOfferResponseFields() throws Exception {
-    var response = new JobOfferResponse(
-        "offer-1", "JD-00000001", "Example Company", "Engineer", "Build services", "Java",
-        7, "Dublin", "Remote");
+    var response =
+        new JobOfferResponse(
+            "offer-1",
+            "JD-00000001",
+            "Example Company",
+            "Engineer",
+            "Build services",
+            "Java",
+            7,
+            "Dublin",
+            "Remote");
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(response));
 
@@ -56,9 +64,17 @@ class JobOfferDtoSerializationTest {
 
   @Test
   void serializesCatalogFieldsAndNumericExperience() throws Exception {
-    var response = new JobOfferCatalogResponse(
-        "offer-1", "BE-00100010", "Example Company", "Backend Engineer", "Build services",
-        "Java and Spring", 7, "Dublin", "Remote");
+    var response =
+        new JobOfferCatalogResponse(
+            "offer-1",
+            "BE-00100010",
+            "Example Company",
+            "Backend Engineer",
+            "Build services",
+            "Java and Spring",
+            7,
+            "Dublin",
+            "Remote");
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(response));
 
@@ -77,10 +93,11 @@ class JobOfferDtoSerializationTest {
 
   @Test
   void serializesStableValidationErrorFieldsWithoutNulls() throws Exception {
-    var error = new JobOfferErrorResponse(
-        "JOB_OFFER_VALIDATION_FAILED",
-        "The job offer is invalid.",
-        Map.of("jobName", "required", "allocation", "unsupported value"));
+    var error =
+        new JobOfferErrorResponse(
+            "JOB_OFFER_VALIDATION_FAILED",
+            "The job offer is invalid.",
+            Map.of("jobName", "required", "allocation", "unsupported value"));
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(error));
 
@@ -93,7 +110,8 @@ class JobOfferDtoSerializationTest {
 
   @Test
   void omitsFieldErrorsWhenNotApplicable() throws Exception {
-    var error = new JobOfferErrorResponse("JOB_OFFER_NOT_FOUND", "The job offer was not found.", null);
+    var error =
+        new JobOfferErrorResponse("JOB_OFFER_NOT_FOUND", "The job offer was not found.", null);
 
     var json = objectMapper.readTree(objectMapper.writeValueAsString(error));
 

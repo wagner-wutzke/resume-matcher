@@ -1,5 +1,18 @@
 package net.wowdev.ai.resume.matcher.joboffer;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.List;
 import net.wowdev.ai.resume.matcher.controller.JobOfferController;
 import net.wowdev.ai.resume.matcher.controller.JobOfferExceptionHandler;
 import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
@@ -10,21 +23,6 @@ import net.wowdev.ai.resume.matcher.service.JobOfferNotFoundException;
 import net.wowdev.ai.resume.matcher.service.JobOfferPersistenceException;
 import net.wowdev.ai.resume.matcher.service.JobOfferService;
 import net.wowdev.ai.resume.matcher.service.JobOfferValidationException;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.doThrow;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.dao.DataAccessResourceFailureException;
@@ -34,23 +32,36 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 class JobOfferControllerTest {
 
   private final JobOfferService service = mock(JobOfferService.class);
-  private final JobOfferCatalogReadRepository catalogRepository = mock(JobOfferCatalogReadRepository.class);
+  private final JobOfferCatalogReadRepository catalogRepository =
+      mock(JobOfferCatalogReadRepository.class);
   private MockMvc mockMvc;
 
   @BeforeEach
   void setUp() {
-    mockMvc = MockMvcBuilders.standaloneSetup(new JobOfferController(service, catalogRepository))
-        .setControllerAdvice(new JobOfferExceptionHandler())
-        .build();
+    mockMvc =
+        MockMvcBuilders.standaloneSetup(new JobOfferController(service, catalogRepository))
+            .setControllerAdvice(new JobOfferExceptionHandler())
+            .build();
   }
 
   @Test
   void returnsAllOfferFields() throws Exception {
-    when(catalogRepository.findAll()).thenReturn(List.of(new JobOfferCatalogEntry(
-        "offer-1", "BE-00100010", "Example Company", "Backend Engineer", "Build services",
-        "Java and Spring", 7, "Dublin", "Remote")));
+    when(catalogRepository.findAll())
+        .thenReturn(
+            List.of(
+                new JobOfferCatalogEntry(
+                    "offer-1",
+                    "BE-00100010",
+                    "Example Company",
+                    "Backend Engineer",
+                    "Build services",
+                    "Java and Spring",
+                    7,
+                    "Dublin",
+                    "Remote")));
 
-    mockMvc.perform(get("/api/job-offers"))
+    mockMvc
+        .perform(get("/api/job-offers"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$[0].id").value("offer-1"))
         .andExpect(jsonPath("$[0].jobId").value("BE-00100010"))
@@ -67,7 +78,8 @@ class JobOfferControllerTest {
   void returnsEmptyArrayWhenThereAreNoOffers() throws Exception {
     when(catalogRepository.findAll()).thenReturn(List.of());
 
-    mockMvc.perform(get("/api/job-offers"))
+    mockMvc
+        .perform(get("/api/job-offers"))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$").isArray())
         .andExpect(jsonPath("$").isEmpty());
@@ -75,10 +87,11 @@ class JobOfferControllerTest {
 
   @Test
   void reportsRepositoryFailureAsServiceUnavailable() throws Exception {
-    when(catalogRepository.findAll()).thenThrow(
-        new DataAccessResourceFailureException("MongoDB unavailable"));
+    when(catalogRepository.findAll())
+        .thenThrow(new DataAccessResourceFailureException("MongoDB unavailable"));
 
-    mockMvc.perform(get("/api/job-offers"))
+    mockMvc
+        .perform(get("/api/job-offers"))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("JOB_OFFERS_UNAVAILABLE"))
         .andExpect(jsonPath("$.message").value("Job offers could not be loaded."));
@@ -86,13 +99,28 @@ class JobOfferControllerTest {
 
   @Test
   void createsJobOfferAndReturnsLocationHeader() throws Exception {
-    var saved = new JobOffer("offer-1", "JD-00000001", "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote");
-    when(service.create(new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote"))).thenReturn(saved);
+    var saved =
+        new JobOffer(
+            "offer-1",
+            "JD-00000001",
+            "Example Company",
+            "Engineer",
+            "Build services",
+            "Java",
+            5,
+            "Dublin",
+            "Remote");
+    when(service.create(
+            new JobOfferRequest(
+                "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote")))
+        .thenReturn(saved);
 
-    mockMvc.perform(post("/api/job-offers")
-            .contentType("application/json")
-            .content("""
+    mockMvc
+        .perform(
+            post("/api/job-offers")
+                .contentType("application/json")
+                .content(
+                    """
                 {"company":"Example Company","jobName":"Engineer","jobDescription":"Build services",
                  "requiredQualifications":"Java","yearsOfExperience":5,"location":"Dublin","allocation":"Remote"}
                 """))
@@ -105,19 +133,25 @@ class JobOfferControllerTest {
         .andExpect(jsonPath("$.yearsOfExperience").value(5))
         .andExpect(jsonPath("$.allocation").value("Remote"));
 
-    verify(service).create(new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote"));
+    verify(service)
+        .create(
+            new JobOfferRequest(
+                "Example Company", "Engineer", "Build services", "Java", 5, "Dublin", "Remote"));
   }
 
   @Test
   void returnsFieldErrorsForInvalidCreateRequest() throws Exception {
-    var request = new JobOfferRequest(" ", "Engineer", "Build services", "Java", 5, "Dublin", "Remote");
-    when(service.create(request)).thenThrow(new JobOfferValidationException(
-        java.util.Map.of("company", "required")));
+    var request =
+        new JobOfferRequest(" ", "Engineer", "Build services", "Java", 5, "Dublin", "Remote");
+    when(service.create(request))
+        .thenThrow(new JobOfferValidationException(java.util.Map.of("company", "required")));
 
-    mockMvc.perform(post("/api/job-offers")
-            .contentType("application/json")
-            .content("""
+    mockMvc
+        .perform(
+            post("/api/job-offers")
+                .contentType("application/json")
+                .content(
+                    """
                 {"company":" ","jobName":"Engineer","jobDescription":"Build services",
                  "requiredQualifications":"Java","yearsOfExperience":5,"location":"Dublin","allocation":"Remote"}
                 """))
@@ -128,13 +162,35 @@ class JobOfferControllerTest {
 
   @Test
   void updatesJobOfferAndReturnsUpdatedFields() throws Exception {
-    var updated = new JobOffer("offer-1", "JD-00000001", "Example Company", "Platform Engineer", "Build systems", "Java", 7, "Dublin", "Hybrid");
-    when(service.update("offer-1", new JobOfferRequest(
-        "Example Company", "Platform Engineer", "Build systems", "Java", 7, "Dublin", "Hybrid"))).thenReturn(updated);
+    var updated =
+        new JobOffer(
+            "offer-1",
+            "JD-00000001",
+            "Example Company",
+            "Platform Engineer",
+            "Build systems",
+            "Java",
+            7,
+            "Dublin",
+            "Hybrid");
+    when(service.update(
+            "offer-1",
+            new JobOfferRequest(
+                "Example Company",
+                "Platform Engineer",
+                "Build systems",
+                "Java",
+                7,
+                "Dublin",
+                "Hybrid")))
+        .thenReturn(updated);
 
-    mockMvc.perform(put("/api/job-offers/offer-1")
-            .contentType("application/json")
-            .content("""
+    mockMvc
+        .perform(
+            put("/api/job-offers/offer-1")
+                .contentType("application/json")
+                .content(
+                    """
                 {"company":"Example Company","jobName":"Platform Engineer","jobDescription":"Build systems",
                  "requiredQualifications":"Java","yearsOfExperience":7,"location":"Dublin","allocation":"Hybrid"}
                 """))
@@ -149,13 +205,17 @@ class JobOfferControllerTest {
 
   @Test
   void returnsFieldErrorsForInvalidUpdateRequest() throws Exception {
-    var request = new JobOfferRequest("Example Company", " ", "Build systems", "Java", 7, "Dublin", "Hybrid");
-    when(service.update("offer-1", request)).thenThrow(new JobOfferValidationException(
-        java.util.Map.of("jobName", "required")));
+    var request =
+        new JobOfferRequest("Example Company", " ", "Build systems", "Java", 7, "Dublin", "Hybrid");
+    when(service.update("offer-1", request))
+        .thenThrow(new JobOfferValidationException(java.util.Map.of("jobName", "required")));
 
-    mockMvc.perform(put("/api/job-offers/offer-1")
-            .contentType("application/json")
-            .content("""
+    mockMvc
+        .perform(
+            put("/api/job-offers/offer-1")
+                .contentType("application/json")
+                .content(
+                    """
                 {"company":"Example Company","jobName":" ","jobDescription":"Build systems",
                  "requiredQualifications":"Java","yearsOfExperience":7,"location":"Dublin","allocation":"Hybrid"}
                 """))
@@ -165,13 +225,17 @@ class JobOfferControllerTest {
 
   @Test
   void returnsNotFoundForUnknownIdentifier() throws Exception {
-    when(service.update(org.mockito.ArgumentMatchers.eq("missing"),
-        org.mockito.ArgumentMatchers.any(JobOfferRequest.class)))
+    when(service.update(
+            org.mockito.ArgumentMatchers.eq("missing"),
+            org.mockito.ArgumentMatchers.any(JobOfferRequest.class)))
         .thenThrow(new JobOfferNotFoundException("missing"));
 
-    mockMvc.perform(put("/api/job-offers/missing")
-            .contentType("application/json")
-            .content("""
+    mockMvc
+        .perform(
+            put("/api/job-offers/missing")
+                .contentType("application/json")
+                .content(
+                    """
                 {"company":"Example Company","jobName":"Engineer","jobDescription":"Build services",
                  "requiredQualifications":"Java","location":"Dublin","allocation":"Remote"}
                 """))
@@ -182,8 +246,7 @@ class JobOfferControllerTest {
 
   @Test
   void deletesOfferAndReturnsNoContent() throws Exception {
-    mockMvc.perform(delete("/api/job-offers/offer-1"))
-        .andExpect(status().isNoContent());
+    mockMvc.perform(delete("/api/job-offers/offer-1")).andExpect(status().isNoContent());
 
     verify(service).delete("offer-1");
   }
@@ -191,9 +254,11 @@ class JobOfferControllerTest {
   @Test
   void returnsNotFoundWhenDeletingUnknownOffer() throws Exception {
     org.mockito.Mockito.doThrow(new JobOfferNotFoundException("missing"))
-        .when(service).delete("missing");
+        .when(service)
+        .delete("missing");
 
-    mockMvc.perform(delete("/api/job-offers/missing"))
+    mockMvc
+        .perform(delete("/api/job-offers/missing"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("JOB_OFFER_NOT_FOUND"));
   }
@@ -201,21 +266,29 @@ class JobOfferControllerTest {
   @Test
   void hidesPersistenceDetailsFromFailedCreateResponse() throws Exception {
     when(service.create(org.mockito.ArgumentMatchers.any(JobOfferRequest.class)))
-        .thenThrow(new JobOfferPersistenceException(
-            new IllegalStateException("mongodb://user:password@internal-host")));
+        .thenThrow(
+            new JobOfferPersistenceException(
+                new IllegalStateException("mongodb://user:password@internal-host")));
 
-    mockMvc.perform(post("/api/job-offers")
-            .contentType("application/json")
-            .content("""
+    mockMvc
+        .perform(
+            post("/api/job-offers")
+                .contentType("application/json")
+                .content(
+                    """
                 {"jobName":"Engineer","jobDescription":"Build services",
                  "requiredQualifications":"Java","location":"Dublin","allocation":"Remote"}
                 """))
         .andExpect(status().isServiceUnavailable())
         .andExpect(jsonPath("$.code").value("JOB_OFFER_PERSISTENCE_UNAVAILABLE"))
-        .andExpect(content().string(org.hamcrest.Matchers.not(
-            org.hamcrest.Matchers.containsString("internal-host"))))
-        .andExpect(content().string(org.hamcrest.Matchers.not(
-            org.hamcrest.Matchers.containsString("password"))));
+        .andExpect(
+            content()
+                .string(
+                    org.hamcrest.Matchers.not(
+                        org.hamcrest.Matchers.containsString("internal-host"))))
+        .andExpect(
+            content()
+                .string(
+                    org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("password"))));
   }
-
 }

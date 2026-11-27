@@ -31,10 +31,29 @@ const cancelButton = document.querySelector("#cancel-job-offer");
 const closeButton = document.querySelector("#close-job-offer-modal");
 const continueEditingButton = document.querySelector("#continue-editing");
 const discardChangesButton = document.querySelector("#discard-changes");
+const candidateList = document.querySelector("#candidate-list");
+const candidateListStatus = document.querySelector("#candidate-list-status");
+const candidateListError = document.querySelector("#candidate-list-error");
+const retryCandidateList = document.querySelector("#retry-candidate-list");
+const candidatePagination = document.querySelector("#candidate-pagination");
+const candidatePreviousPage = document.querySelector("#candidate-previous-page");
+const candidateNextPage = document.querySelector("#candidate-next-page");
+const candidatePageIndicator = document.querySelector("#candidate-page-indicator");
+const candidateDetailsContent = document.querySelector("#candidate-details-content");
+const candidateDetailsPanel = document.querySelector("#candidate-details");
+const candidateDetailsStatus = document.querySelector("#candidate-details-status");
+const candidateDetailsError = document.querySelector("#candidate-details-error");
+const retryCandidateDetails = document.querySelector("#retry-candidate-details");
+const candidatesTab = document.querySelector("#candidates-tab");
 let selectedPosition = null;
 let positions = [];
 let formMode = "create";
 let originalFormValues = [];
+let candidatePage = 0;
+let candidateTotalPages = 0;
+let selectedCandidateId = null;
+const CANDIDATE_PAGE_SIZE = 15;
+const EMPTY_VALUE = "—";
 
 const detailFields = [
   ["Company", "company"],
@@ -47,6 +66,231 @@ const detailFields = [
 
 function setText(element, value) {
   element.textContent = value == null ? "" : String(value);
+}
+
+function candidateValue(value) {
+  const text = value == null ? "" : String(value).trim();
+  return text || EMPTY_VALUE;
+}
+
+function candidateLocation(candidate) {
+  return [candidate.city, candidate.country]
+    .map((value) => value == null ? "" : String(value).trim())
+    .filter(Boolean)
+    .join(", ") || EMPTY_VALUE;
+}
+
+function clearCandidateDetails() {
+  selectedCandidateId = null;
+  candidateDetailsPanel.setAttribute("aria-busy", "false");
+  candidateDetailsContent.replaceChildren();
+  candidateDetailsStatus.textContent = "";
+  candidateDetailsError.textContent = "";
+  candidateDetailsError.hidden = true;
+  retryCandidateDetails.hidden = true;
+}
+
+function renderCandidateSummaries(items) {
+  candidateList.replaceChildren();
+  items.slice(0, CANDIDATE_PAGE_SIZE).forEach((candidate) => {
+    const item = document.createElement("div");
+    item.setAttribute("role", "listitem");
+    const entry = document.createElement("button");
+    entry.type = "button";
+    entry.className = "position-entry candidate-entry";
+    entry.setAttribute("aria-pressed", "false");
+    entry.dataset.candidateId = String(candidate.id ?? "");
+    setText(
+      entry,
+      `${candidateValue(candidate.fullname)} · ${candidateValue(candidate.position)} · `
+        + `${candidateLocation(candidate)} · ${candidateValue(candidate.yearsOfExperience)}`,
+    );
+    entry.addEventListener("click", () => selectCandidate(candidate, entry));
+    item.append(entry);
+    candidateList.append(item);
+  });
+}
+
+function renderCandidatePagination() {
+  const hasPages = candidateTotalPages > 0;
+  candidatePagination.hidden = !hasPages;
+  candidatePageIndicator.textContent = hasPages
+    ? `Page ${candidatePage + 1} of ${candidateTotalPages}`
+    : "";
+  candidatePreviousPage.disabled = candidatePage <= 0;
+  candidateNextPage.disabled = candidatePage >= candidateTotalPages - 1;
+}
+
+async function loadCandidatePage(page = candidatePage) {
+  candidateList.setAttribute("aria-busy", "true");
+  candidateListStatus.textContent = "Loading candidates…";
+  candidateListError.hidden = true;
+  retryCandidateList.hidden = true;
+  candidateList.replaceChildren();
+  clearCandidateDetails();
+
+  try {
+    const response = await fetch(`/api/candidates?page=${page}`);
+    let result = null;
+    try {
+      result = await response.json();
+    } catch {
+      result = null;
+    }
+    if (!response.ok) {
+      if (result?.code === "CANDIDATE_PAGE_OUT_OF_RANGE" && page !== 0) {
+        candidatePage = 0;
+        return await loadCandidatePage(0);
+      }
+      throw new Error("Candidate list unavailable");
+    }
+    if (!result || !Array.isArray(result.items)) throw new Error("Candidate list unavailable");
+
+    candidatePage = Number.isInteger(result.page) ? result.page : page;
+    candidateTotalPages = Number.isInteger(result.totalPages) ? result.totalPages : 0;
+    renderCandidateSummaries(result.items);
+    renderCandidatePagination();
+    candidateListStatus.textContent = result.items.length === 0 ? "No candidates available." : "";
+  } catch {
+    candidateList.replaceChildren();
+    candidatePagination.hidden = true;
+    candidatePageIndicator.textContent = "";
+    candidateListStatus.textContent = "";
+    candidateListError.textContent = "Unable to load candidates.";
+    candidateListError.hidden = false;
+    retryCandidateList.hidden = false;
+  } finally {
+    candidateList.setAttribute("aria-busy", "false");
+  }
+}
+
+function selectCandidate(candidate, selectedEntry) {
+  selectedCandidateId = String(candidate.id ?? "");
+  candidateList.querySelectorAll(".candidate-entry").forEach((entry) => {
+    const selected = entry === selectedEntry;
+    entry.classList.toggle("selected", selected);
+    entry.setAttribute("aria-pressed", String(selected));
+  });
+  candidateDetailsContent.replaceChildren();
+  return loadCandidateDetails(selectedCandidateId);
+}
+
+function appendCandidateField(list, label, value) {
+  const field = document.createElement("div");
+  field.className = "detail-field";
+  const term = document.createElement("dt");
+  setText(term, label);
+  const description = document.createElement("dd");
+  setText(description, candidateValue(value));
+  field.append(term, description);
+  list.append(field);
+}
+
+function renderCandidateDetails(candidate) {
+  candidateDetailsContent.replaceChildren();
+  const title = document.createElement("h2");
+  title.className = "detail-title";
+  setText(title, candidateValue(candidate.fullname));
+  candidateDetailsContent.append(title);
+
+  const fields = document.createElement("dl");
+  [
+    ["Email", candidate.email],
+    ["Full name", candidate.fullname],
+    ["Country", candidate.country],
+    ["City", candidate.city],
+    ["Position", candidate.position],
+    ["Skills", candidate.skills],
+    ["Allocation", candidate.allocation],
+    ["Years of experience", candidate.yearsOfExperience],
+  ].forEach(([label, value]) => appendCandidateField(fields, label, value));
+  candidateDetailsContent.append(fields);
+
+  const experienceHeading = document.createElement("h3");
+  experienceHeading.className = "h5 mt-4";
+  setText(experienceHeading, "Work experience");
+  candidateDetailsContent.append(experienceHeading);
+  const experiences = Array.isArray(candidate.experiences) ? candidate.experiences : [];
+  if (experiences.length === 0) {
+    const emptyMessage = document.createElement("p");
+    setText(emptyMessage, "No reported experience.");
+    candidateDetailsContent.append(emptyMessage);
+    return;
+  }
+
+  const experienceList = document.createElement("ul");
+  experienceList.className = "candidate-experiences";
+  experiences.forEach((experience) => {
+    const item = document.createElement("li");
+    item.className = "candidate-experience";
+    const experienceTitle = document.createElement("h4");
+    experienceTitle.className = "h6";
+    setText(experienceTitle, candidateValue(experience.title));
+    const experienceFields = document.createElement("dl");
+    [
+      ["Company", experience.company],
+      ["Period", experience.period],
+      ["Responsibilities", experience.responsibilities],
+      ["Achievements", experience.achievements],
+    ].forEach(([label, value]) => appendCandidateField(experienceFields, label, value));
+    item.append(experienceTitle, experienceFields);
+    experienceList.append(item);
+  });
+  candidateDetailsContent.append(experienceList);
+}
+
+function clearCandidateSelection() {
+  selectedCandidateId = null;
+  candidateList.querySelectorAll(".candidate-entry").forEach((entry) => {
+    entry.classList.toggle("selected", false);
+    entry.setAttribute("aria-pressed", "false");
+  });
+  candidateDetailsContent.replaceChildren();
+  candidateDetailsStatus.textContent = "";
+  candidateDetailsError.textContent = "";
+  candidateDetailsError.hidden = true;
+  retryCandidateDetails.hidden = true;
+}
+
+async function loadCandidateDetails(candidateId) {
+  candidateDetailsPanel.setAttribute("aria-busy", "true");
+  candidateDetailsStatus.textContent = "Loading candidate details…";
+  candidateDetailsError.hidden = true;
+  retryCandidateDetails.hidden = true;
+  candidateDetailsContent.replaceChildren();
+
+  try {
+    const response = await fetch(`/api/candidates/${encodeURIComponent(candidateId)}`);
+    let candidate = null;
+    try {
+      candidate = await response.json();
+    } catch {
+      candidate = null;
+    }
+    if (response.status === 404 || candidate?.code === "CANDIDATE_NOT_FOUND") {
+      if (selectedCandidateId === candidateId) {
+        clearCandidateSelection();
+        await loadCandidatePage(candidatePage);
+      }
+      return;
+    }
+    if (!response.ok || !candidate) throw new Error("Candidate details unavailable");
+    if (selectedCandidateId !== candidateId) return;
+
+    renderCandidateDetails(candidate);
+    candidateDetailsStatus.textContent = "";
+  } catch {
+    if (selectedCandidateId !== candidateId) return;
+    candidateDetailsContent.replaceChildren();
+    candidateDetailsStatus.textContent = "";
+    candidateDetailsError.textContent = "Unable to load candidate details.";
+    candidateDetailsError.hidden = false;
+    retryCandidateDetails.hidden = false;
+  } finally {
+    if (selectedCandidateId === candidateId || selectedCandidateId === null) {
+      candidateDetailsPanel.setAttribute("aria-busy", "false");
+    }
+  }
 }
 
 function positionLabel(position) {
@@ -326,6 +570,16 @@ discardChangesButton.addEventListener("click", () => {
   bootstrap.Modal.getOrCreateInstance(modalElement).hide();
 });
 offerForm.addEventListener("submit", saveOffer);
+candidatePreviousPage.addEventListener("click", () => {
+  if (candidatePage > 0) loadCandidatePage(candidatePage - 1);
+});
+candidateNextPage.addEventListener("click", () => {
+  if (candidatePage < candidateTotalPages - 1) loadCandidatePage(candidatePage + 1);
+});
+retryCandidateList.addEventListener("click", () => loadCandidatePage(candidatePage));
+retryCandidateDetails.addEventListener("click", () =>
+  selectedCandidateId ? loadCandidateDetails(selectedCandidateId) : undefined);
+candidatesTab.addEventListener("shown.bs.tab", () => loadCandidatePage(0));
 
 async function loadPositions() {
   try {
@@ -340,3 +594,4 @@ async function loadPositions() {
 }
 
 loadPositions();
+loadCandidatePage(0);

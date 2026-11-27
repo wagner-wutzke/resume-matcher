@@ -55,19 +55,15 @@ final class CandidateStoreCoordinator {
       mongoMutationAttempted = true;
       Candidate savedCandidate =
           stageLogger.execute(
-              sourceFile,
-              failingStage,
-              () -> candidateRepository.replaceByEmail(candidate));
+              sourceFile, failingStage, () -> candidateRepository.replaceByEmail(candidate));
       failingStage = IngestionStage.QDRANT_WRITE;
       qdrantMutationAttempted = true;
       stageLogger.execute(
           sourceFile,
           failingStage,
           () ->
-              vectorRepository.replaceByEmail(
-                  savedCandidate, sourceFile.getFileName().toString()));
-      return new StoreUpdate(
-          candidate.email(), previousCandidate, previousPoints, true, true);
+              vectorRepository.replaceByEmail(savedCandidate, sourceFile.getFileName().toString()));
+      return new StoreUpdate(candidate.email(), previousCandidate, previousPoints, true, true);
     } catch (RuntimeException failure) {
       if (failure instanceof DuplicateKeyException) {
         mongoMutationAttempted = false;
@@ -99,8 +95,7 @@ final class CandidateStoreCoordinator {
                   update.qdrantMutationAttempted());
           if (!restored) {
             throw new ResumeIngestionException(
-                "Store restoration failed",
-                ResumeIngestionException.FailureCause.ROLLBACK_FAILED);
+                "Store restoration failed", ResumeIngestionException.FailureCause.ROLLBACK_FAILED);
           }
           return null;
         });
@@ -177,8 +172,10 @@ final class CandidateStoreCoordinator {
   private boolean pointsEqual(CandidateVectorSnapshot actual, CandidateVectorSnapshot expected) {
     java.util.Comparator<CandidateVectorPoint> byId =
         java.util.Comparator.comparing(CandidateVectorPoint::id);
-    return actual.points().stream().sorted(byId).toList().equals(
-        expected.points().stream().sorted(byId).toList());
+    return actual.points().stream()
+        .sorted(byId)
+        .toList()
+        .equals(expected.points().stream().sorted(byId).toList());
   }
 
   record StoreUpdate(

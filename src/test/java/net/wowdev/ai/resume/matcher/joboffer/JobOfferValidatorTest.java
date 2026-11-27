@@ -1,17 +1,16 @@
 package net.wowdev.ai.resume.matcher.joboffer;
 
-import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
-import net.wowdev.ai.resume.matcher.service.JobOfferValidator;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 import java.util.stream.Stream;
+import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
+import net.wowdev.ai.resume.matcher.service.JobOfferValidator;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.api.Test;
 
 class JobOfferValidatorTest {
 
@@ -49,26 +48,30 @@ class JobOfferValidatorTest {
 
   @Test
   void reportsAllFieldsRequiredForNullRequest() {
-    assertEquals(Map.of(
-        "company", "required",
-        "jobName", "required",
-        "jobDescription", "required",
-        "requiredQualifications", "required",
-        "yearsOfExperience", "required",
-        "location", "required",
-        "allocation", "required"), validator.validate(null));
+    assertEquals(
+        Map.of(
+            "company", "required",
+            "jobName", "required",
+            "jobDescription", "required",
+            "requiredQualifications", "required",
+            "yearsOfExperience", "required",
+            "location", "required",
+            "allocation", "required"),
+        validator.validate(null));
   }
 
   @Test
   void requiresYearsOfExperience() {
-    var request = new JobOfferRequest(
-        "Example Company", "Engineer", "Build services", "Java", null, "Dublin", "Remote");
+    var request =
+        new JobOfferRequest(
+            "Example Company", "Engineer", "Build services", "Java", null, "Dublin", "Remote");
 
     assertEquals(Map.of("yearsOfExperience", "required"), validator.validate(request));
   }
 
   private static JobOfferRequest requestWith(String allocation) {
-    return new JobOfferRequest("Example Company", "Engineer", "Build services", "Java", 7, "Dublin", allocation);
+    return new JobOfferRequest(
+        "Example Company", "Engineer", "Build services", "Java", 7, "Dublin", allocation);
   }
 
   private static JobOfferRequest requestWithField(String field, String value) {

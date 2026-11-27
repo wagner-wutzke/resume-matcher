@@ -34,7 +34,9 @@ class DotenvConfigurationTest {
     Path applicationProperties = temporaryDirectory.resolve("application.properties");
     Files.writeString(
         applicationProperties,
-        "spring.config.import=optional:" + temporaryDirectory.resolve(".env").toUri() + "[.properties]\n");
+        "spring.config.import=optional:"
+            + temporaryDirectory.resolve(".env").toUri()
+            + "[.properties]\n");
 
     SpringApplication application = new SpringApplication(DotenvTestConfiguration.class);
     application.setWebApplicationType(WebApplicationType.NONE);

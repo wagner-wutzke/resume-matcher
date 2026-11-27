@@ -73,11 +73,19 @@ class FakeElement {
 
   querySelectorAll(selector) {
     const className = selector.slice(1);
-    return this.children.filter((child) => child.classes.has(className));
+    return this.children.flatMap((child) => [
+      ...(child.classes.has(className) ? [child] : []),
+      ...child.querySelectorAll(selector),
+    ]);
   }
 
   click() {
+    if (this.disabled || this.hidden) return undefined;
     return this.listeners.get("click")?.();
+  }
+
+  fire(name, event = {}) {
+    return this.listeners.get(name)?.(event);
   }
 
   focus() {
@@ -89,7 +97,13 @@ class FakeElement {
   }
 }
 
-function runApp(fetch, markdownGlobals = {}) {
+function runApp(fetch, markdownGlobals = {}, candidateMode = false) {
+  const appFetch = (url, options) => {
+    if (!candidateMode && String(url).startsWith("/api/candidates")) {
+      return Promise.resolve({ ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) });
+    }
+    return fetch(url, options);
+  };
   const elements = new Map([
     ["#position-list", new FakeElement()],
     ["#position-details", new FakeElement()],
@@ -121,6 +135,20 @@ function runApp(fetch, markdownGlobals = {}) {
     ["#continue-editing", new FakeElement()],
     ["#discard-changes", new FakeElement()],
     ["#save-job-offer", new FakeElement()],
+    ["#candidate-list", new FakeElement()],
+    ["#candidate-list-status", new FakeElement()],
+    ["#candidate-list-error", new FakeElement()],
+    ["#retry-candidate-list", new FakeElement()],
+    ["#candidate-pagination", new FakeElement()],
+    ["#candidate-previous-page", new FakeElement()],
+    ["#candidate-next-page", new FakeElement()],
+    ["#candidate-page-indicator", new FakeElement()],
+    ["#candidate-details-content", new FakeElement()],
+    ["#candidate-details", new FakeElement()],
+    ["#candidate-details-status", new FakeElement()],
+    ["#candidate-details-error", new FakeElement()],
+    ["#retry-candidate-details", new FakeElement()],
+    ["#candidates-tab", new FakeElement()],
   ]);
   [
     ["#job-company", "company"],
@@ -149,7 +177,7 @@ function runApp(fetch, markdownGlobals = {}) {
       },
     },
   };
-  runInNewContext(script, { document, fetch, bootstrap, ...markdownGlobals });
+  runInNewContext(script, { document, fetch: appFetch, bootstrap, ...markdownGlobals });
   return elements;
 }
 
@@ -202,6 +230,326 @@ test("uses the specified palette, page space, and responsive split layout", () =
   assert.match(styles, /--royal-blue:\s*#4169e1;/);
   assert.match(styles, /\.app-shell\s*\{[^}]*min-height:\s*100vh;/s);
   assert.match(styles, /@media\s*\(max-width:\s*700px\)[\s\S]*?grid-template-columns:\s*1fr;/);
+});
+
+test("provides accessible candidate pagination and retry regions without changing tabs", () => {
+  assert.match(page, /id="candidate-list"[^>]*role="list"/);
+  assert.match(page, /id="candidate-list-status"[^>]*role="status"[^>]*aria-live="polite"/);
+  assert.match(page, /id="candidate-pagination"[^>]*aria-label="Candidate pages"[^>]*hidden/);
+  assert.match(page, /id="candidate-previous-page" type="button"/);
+  assert.match(page, /id="candidate-next-page" type="button"/);
+  assert.match(page, /id="retry-candidate-list" type="button" hidden/);
+  assert.match(page, /id="retry-candidate-details" type="button" hidden/);
+  assert.match(page, /id="positions-tab"/);
+  assert.match(page, /id="position-list"/);
+});
+
+test("loads and safely renders candidate summaries with placeholders and pagination", async () => {
+  const unsafeName = "<img src=x onerror=alert(1)>";
+  const requests = [];
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates")) requests.push(url);
+    return {
+      ok: true,
+      json: async () => ({
+        items: [{
+          id: "candidate-1",
+          fullname: unsafeName,
+          position: "Engineer",
+          country: "Brazil",
+          city: "São Paulo",
+          yearsOfExperience: "5 years",
+        }],
+        page: 0,
+        pageSize: 15,
+        totalElements: 16,
+        totalPages: 2,
+      }),
+    };
+  }, {}, true);
+  await flushApp();
+
+  const list = elements.get("#candidate-list");
+  assert.deepEqual(requests, ["/api/candidates?page=0"]);
+  assert.equal(list.children.length, 1);
+  const entries = list.querySelectorAll(".candidate-entry");
+  assert.equal(entries[0].tagName, "BUTTON");
+  assert.equal(list.children[0].attributes.get("role"), "listitem");
+  assert.match(entries[0].textContent, /<img src=x onerror=alert\(1\)>/);
+  assert.match(entries[0].textContent, /São Paulo, Brazil/);
+  assert.equal(elements.get("#candidate-pagination").hidden, false);
+  assert.equal(elements.get("#candidate-page-indicator").textContent, "Page 1 of 2");
+  assert.equal(elements.get("#candidate-previous-page").disabled, true);
+  assert.equal(elements.get("#candidate-next-page").disabled, false);
+});
+
+test("caps candidate summaries at 15 and displays placeholders for missing summary values", async () => {
+  const items = Array.from({ length: 16 }, (_, index) => ({ id: `candidate-${index}` }));
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates")) {
+      return { ok: true, json: async () => ({ items, page: 0, totalPages: 2 }) };
+    }
+    return { ok: true, json: async () => [] };
+  }, {}, true);
+  await flushApp();
+
+  const entries = elements.get("#candidate-list").querySelectorAll(".candidate-entry");
+  assert.equal(entries.length, 15);
+  assert.equal(entries[0].textContent, "— · — · — · —");
+});
+
+test("changes candidate pages within boundaries and refreshes when the tab is reopened", async () => {
+  const requests = [];
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates")) requests.push(url);
+    const page = Number(new URL(url, "http://local").searchParams.get("page"));
+    return {
+      ok: true,
+      json: async () => ({
+        items: [{ id: `candidate-${page}`, fullname: `Candidate ${page}` }],
+        page,
+        totalPages: 2,
+      }),
+    };
+  }, {}, true);
+  await flushApp();
+
+  await elements.get("#candidate-next-page").click();
+  await flushApp();
+  assert.equal(elements.get("#candidate-page-indicator").textContent, "Page 2 of 2");
+  assert.equal(elements.get("#candidate-next-page").disabled, true);
+  await elements.get("#candidate-previous-page").click();
+  await flushApp();
+  assert.equal(elements.get("#candidate-page-indicator").textContent, "Page 1 of 2");
+
+  await elements.get("#candidates-tab").fire("shown.bs.tab");
+  await flushApp();
+  assert.deepEqual(requests, [
+    "/api/candidates?page=0",
+    "/api/candidates?page=1",
+    "/api/candidates?page=0",
+    "/api/candidates?page=0",
+  ]);
+});
+
+test("shows an empty candidate state without pagination", async () => {
+  const elements = runApp(async () => ({
+    ok: true,
+    json: async () => ({ items: [], page: 0, totalElements: 0, totalPages: 0 }),
+  }), {}, true);
+  await flushApp();
+
+  assert.equal(elements.get("#candidate-list").children.length, 0);
+  assert.equal(elements.get("#candidate-list-status").textContent, "No candidates available.");
+  assert.equal(elements.get("#candidate-pagination").hidden, true);
+  assert.equal(elements.get("#candidate-details-content").children.length, 0);
+});
+
+test("shows a retryable safe error and reloads a failed candidate page", async () => {
+  let attempts = 0;
+  const elements = runApp(async (url) => {
+    if (!url.startsWith("/api/candidates")) return { ok: true, json: async () => [] };
+    attempts += 1;
+    if (attempts === 1) throw new Error("private database details");
+    return { ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) };
+  }, {}, true);
+  await flushApp();
+
+  assert.equal(elements.get("#candidate-list-error").textContent, "Unable to load candidates.");
+  assert.equal(elements.get("#candidate-list-error").hidden, false);
+  assert.equal(elements.get("#retry-candidate-list").hidden, false);
+  assert.equal(elements.get("#candidate-list-error").textContent.includes("private"), false);
+  await elements.get("#retry-candidate-list").click();
+  await flushApp();
+  assert.equal(attempts, 2);
+  assert.equal(elements.get("#candidate-list-error").hidden, true);
+});
+
+test("keeps Open Positions usable when candidate list loading fails", async () => {
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates")) {
+      return {
+        ok: false,
+        status: 503,
+        json: async () => ({ code: "CANDIDATES_UNAVAILABLE", message: "Unavailable" }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => [{
+        id: "position-1",
+        jobTitle: "Backend Engineer",
+        company: "Example Co.",
+        jobId: "JOB-01",
+      }],
+    };
+  }, {}, true);
+  await flushApp();
+
+  assert.equal(elements.get("#candidate-list-error").hidden, false);
+  const positionList = elements.get("#position-list");
+  assert.equal(positionList.children.length, 1);
+  positionList.children[0].click();
+  assert.equal(elements.get("#position-details").textContent.includes("Backend Engineer"), true);
+  assert.equal(elements.get("#position-details").textContent.includes("Example Co."), true);
+});
+
+test("loads and renders selected candidate details and structured experiences as text", async () => {
+  const unsafeText = "<script>candidate data</script>";
+  const candidate = {
+    id: "candidate-1",
+    email: "jane@example.com",
+    fullname: unsafeText,
+    country: "Brazil",
+    city: "São Paulo",
+    position: "Engineer",
+    skills: "Java",
+    allocation: "Remote",
+    yearsOfExperience: "5 years",
+    experiences: [{
+      title: "Developer",
+      company: "Example Co.",
+      period: "2021 – Present",
+      responsibilities: "Built services",
+      achievements: "Improved reliability",
+    }],
+  };
+  const requests = [];
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates")) requests.push(url);
+    if (url.startsWith("/api/candidates/")) return { ok: true, json: async () => candidate };
+    return {
+      ok: true,
+      json: async () => ({ items: [{ id: candidate.id, fullname: candidate.fullname }], page: 0, totalPages: 1 }),
+    };
+  }, {}, true);
+  await flushApp();
+
+  await elements.get("#candidate-list").querySelectorAll(".candidate-entry")[0].click();
+
+  assert.equal(requests[1], "/api/candidates/candidate-1");
+  assert.equal(elements.get("#candidate-pagination").hidden, false);
+  assert.equal(elements.get("#candidate-previous-page").disabled, true);
+  assert.equal(elements.get("#candidate-next-page").disabled, true);
+  assert.equal(
+    elements.get("#candidate-list").querySelectorAll(".candidate-entry")[0].attributes.get("aria-pressed"),
+    "true",
+  );
+  const details = elements.get("#candidate-details-content");
+  assert.match(details.textContent, /jane@example.com/);
+  assert.match(details.textContent, /Brazil/);
+  assert.match(details.textContent, /Java/);
+  assert.match(details.textContent, /Example Co\./);
+  assert.match(details.textContent, /Improved reliability/);
+  assert.match(details.textContent, /<script>candidate data<\/script>/);
+  assert.equal(details.children.some((child) => child.html !== ""), false);
+  assert.equal(elements.get("#candidate-details").attributes.get("aria-busy"), "false");
+});
+
+test("replaces details on selection change and discards stale responses", async () => {
+  const pending = new Map();
+  const elements = runApp((url) => {
+    if (url.startsWith("/api/candidates/")) {
+      return new Promise((resolve) => pending.set(url, resolve));
+    }
+    return Promise.resolve({
+      ok: true,
+      json: async () => ({
+        items: [{ id: "one", fullname: "First" }, { id: "two", fullname: "Second" }],
+        page: 0,
+        totalPages: 1,
+      }),
+    });
+  }, {}, true);
+  await flushApp();
+  const entries = elements.get("#candidate-list").querySelectorAll(".candidate-entry");
+  const staleRequest = entries[0].click();
+  const currentRequest = entries[1].click();
+  pending.get("/api/candidates/two")({
+    ok: true,
+    json: async () => ({ id: "two", fullname: "Second candidate", experiences: [] }),
+  });
+  await currentRequest;
+  pending.get("/api/candidates/one")({
+    ok: true,
+    json: async () => ({ id: "one", fullname: "First candidate", experiences: [] }),
+  });
+  await staleRequest;
+
+  assert.match(elements.get("#candidate-details-content").textContent, /Second candidate/);
+  assert.doesNotMatch(elements.get("#candidate-details-content").textContent, /First candidate/);
+  assert.equal(entries[0].attributes.get("aria-pressed"), "false");
+  assert.equal(entries[1].attributes.get("aria-pressed"), "true");
+});
+
+test("shows empty experience state and retries failed candidate details", async () => {
+  let detailAttempts = 0;
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates/")) {
+      detailAttempts += 1;
+      if (detailAttempts === 1) throw new Error("private storage details");
+      return { ok: true, json: async () => ({ id: "candidate-1", fullname: "Jane", experiences: [] }) };
+    }
+    return {
+      ok: true,
+      json: async () => ({ items: [{ id: "candidate-1", fullname: "Jane" }], page: 0, totalPages: 1 }),
+    };
+  }, {}, true);
+  await flushApp();
+  await elements.get("#candidate-list").querySelectorAll(".candidate-entry")[0].click();
+
+  assert.equal(elements.get("#candidate-details-error").textContent, "Unable to load candidate details.");
+  assert.equal(elements.get("#retry-candidate-details").hidden, false);
+  await elements.get("#retry-candidate-details").click();
+
+  assert.equal(detailAttempts, 2);
+  assert.match(elements.get("#candidate-details-content").textContent, /No reported experience\./);
+  assert.equal(elements.get("#candidate-details-error").hidden, true);
+});
+
+test("shows placeholders for missing detail fields and empty experience values", async () => {
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates/")) {
+      return {
+        ok: true,
+        json: async () => ({ id: "candidate-1", experiences: [{ title: "", company: "" }] }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({ items: [{ id: "candidate-1" }], page: 0, totalPages: 1 }),
+    };
+  }, {}, true);
+  await flushApp();
+  await elements.get("#candidate-list").querySelectorAll(".candidate-entry")[0].click();
+
+  const detailText = elements.get("#candidate-details-content").textContent;
+  assert.match(detailText, /Email—/);
+  assert.match(detailText, /Full name—/);
+  assert.match(detailText, /Company—/);
+  assert.match(detailText, /Period—/);
+});
+
+test("clears a missing candidate and refreshes the current list page", async () => {
+  const pageRequests = [];
+  const elements = runApp(async (url) => {
+    if (url.startsWith("/api/candidates/")) return { ok: false, status: 404, json: async () => ({}) };
+    if (url.startsWith("/api/candidates")) pageRequests.push(url);
+    return {
+      ok: true,
+      json: async () => ({ items: [{ id: "candidate-1", fullname: "Jane" }], page: 0, totalPages: 1 }),
+    };
+  }, {}, true);
+  await flushApp();
+  await elements.get("#candidate-list").querySelectorAll(".candidate-entry")[0].click();
+  await flushApp();
+
+  assert.deepEqual(pageRequests, ["/api/candidates?page=0", "/api/candidates?page=0"]);
+  assert.equal(
+    elements.get("#candidate-list").querySelectorAll(".candidate-entry")[0].attributes.get("aria-pressed"),
+    "false",
+  );
+  assert.equal(elements.get("#candidate-details-content").children.length, 0);
 });
 
 test("renders Markdown after disabling raw HTML and sanitizing generated markup", async () => {

@@ -25,8 +25,7 @@ public class JobOfferController {
   private final JobOfferCatalogReadRepository catalogRepository;
 
   public JobOfferController(
-      JobOfferService service,
-      JobOfferCatalogReadRepository catalogRepository) {
+      JobOfferService service, JobOfferCatalogReadRepository catalogRepository) {
     this.service = service;
     this.catalogRepository = catalogRepository;
   }
@@ -53,5 +52,4 @@ public class JobOfferController {
     service.delete(id);
     return ResponseEntity.noContent().build();
   }
-
 }

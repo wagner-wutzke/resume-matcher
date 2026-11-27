@@ -1,11 +1,10 @@
 package net.wowdev.ai.resume.matcher.joboffer;
 
-import net.wowdev.ai.resume.matcher.model.JobOffer;
-import net.wowdev.ai.resume.matcher.repository.JobOfferRepository;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import net.wowdev.ai.resume.matcher.model.JobOffer;
+import net.wowdev.ai.resume.matcher.repository.JobOfferRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -30,8 +29,17 @@ class JobOfferMappingTest {
     assertEquals("yearsOfExperience", JobOffer.class.getRecordComponents()[6].getName());
     assertEquals("location", JobOffer.class.getRecordComponents()[7].getName());
     assertEquals("allocation", JobOffer.class.getRecordComponents()[8].getName());
-    var offer = new JobOffer("mongo-id", "JD-00000001", "Example Company", "Engineer",
-        "Build systems", "Java", 7, "Dublin", "Remote");
+    var offer =
+        new JobOffer(
+            "mongo-id",
+            "JD-00000001",
+            "Example Company",
+            "Engineer",
+            "Build systems",
+            "Java",
+            7,
+            "Dublin",
+            "Remote");
     assertEquals("JD-00000001", offer.jobId());
     assertEquals(7, offer.yearsOfExperience());
     assertNotNull(JobOfferRepository.class.getDeclaredMethod("findAll"));

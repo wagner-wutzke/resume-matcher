@@ -73,11 +73,15 @@ class SpaApplicationTest {
             content()
                 .string(
                     org.hamcrest.Matchers.containsString(
-                        "class=\"candidate-list\" aria-live=\"polite\"></div>")))
+                        "class=\"candidate-list\" id=\"candidate-list\" role=\"list\"")))
         .andExpect(
             content()
                 .string(
                     org.hamcrest.Matchers.containsString(
-                        "aria-label=\"Selected candidate details\"></section>")));
+                        "id=\"candidate-details\" aria-label=\"Selected candidate details\"")))
+        .andExpect(
+            content()
+                .string(
+                    org.hamcrest.Matchers.containsString("aria-label=\"Candidate pages\" hidden")));
   }
 }

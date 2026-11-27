@@ -10,11 +10,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.nio.file.Path;
-import java.util.List;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import java.nio.file.Path;
+import java.util.List;
 import net.wowdev.ai.resume.matcher.model.Candidate;
 import net.wowdev.ai.resume.matcher.model.CandidateExperience;
 import org.junit.jupiter.api.Test;

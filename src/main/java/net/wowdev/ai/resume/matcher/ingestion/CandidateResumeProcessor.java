@@ -57,7 +57,9 @@ public class CandidateResumeProcessor {
 
     try {
       stageLogger.execute(
-          sourceFile, IngestionStage.FILE_MOVEMENT_HANDLED, () -> fileMover.moveToHandled(sourceFile));
+          sourceFile,
+          IngestionStage.FILE_MOVEMENT_HANDLED,
+          () -> fileMover.moveToHandled(sourceFile));
       stageLogger.overallCompleted(sourceFile, true, startedAt);
       return new ResumeProcessingResult(true, false);
     } catch (RuntimeException failure) {
@@ -99,9 +101,7 @@ public class CandidateResumeProcessor {
   private void moveToError(Path sourceFile) {
     try {
       stageLogger.execute(
-          sourceFile,
-          IngestionStage.FILE_MOVEMENT_ERROR,
-          () -> fileMover.moveToError(sourceFile));
+          sourceFile, IngestionStage.FILE_MOVEMENT_ERROR, () -> fileMover.moveToError(sourceFile));
     } catch (RuntimeException exception) {
       // The mover logs the filename, stage, and sanitized failure cause.
     }

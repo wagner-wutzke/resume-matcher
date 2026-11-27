@@ -19,9 +19,7 @@ public class ExperienceDurationCalculator {
   private static final String END_MARKER = "(?:present|today|current|now|ongoing)";
   private static final Pattern YEAR_RANGE =
       Pattern.compile(
-          "^(\\d{4})\\s*(?:[-–—]|to|until)\\s*(\\d{4}|"
-              + END_MARKER
-              + ")$",
+          "^(\\d{4})\\s*(?:[-–—]|to|until)\\s*(\\d{4}|" + END_MARKER + ")$",
           Pattern.CASE_INSENSITIVE);
   private static final Pattern MONTH_RANGE =
       Pattern.compile(

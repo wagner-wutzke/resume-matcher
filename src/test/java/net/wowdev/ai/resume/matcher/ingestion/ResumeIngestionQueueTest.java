@@ -20,8 +20,7 @@ class ResumeIngestionQueueTest {
     appender.start();
     logger.addAppender(appender);
     CountDownLatch processed = new CountDownLatch(1);
-    ResumeIngestionQueue queue =
-        new ResumeIngestionQueue(path -> processed.countDown());
+    ResumeIngestionQueue queue = new ResumeIngestionQueue(path -> processed.countDown());
 
     try {
       queue.enqueue(Path.of("good.pdf"));

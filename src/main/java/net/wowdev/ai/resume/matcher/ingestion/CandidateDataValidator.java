@@ -48,12 +48,7 @@ public class CandidateDataValidator {
           YEARS_OF_EXPERIENCE_FIELD,
           EXPERIENCES_FIELD);
   private static final Set<String> EXPERIENCE_FIELDS =
-      Set.of(
-          TITLE_FIELD,
-          COMPANY_FIELD,
-          PERIOD_FIELD,
-          RESPONSIBILITIES_FIELD,
-          ACHIEVEMENTS_FIELD);
+      Set.of(TITLE_FIELD, COMPANY_FIELD, PERIOD_FIELD, RESPONSIBILITIES_FIELD, ACHIEVEMENTS_FIELD);
 
   private final ObjectMapper objectMapper;
 

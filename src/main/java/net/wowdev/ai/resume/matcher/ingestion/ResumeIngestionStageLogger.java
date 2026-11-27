@@ -11,8 +11,7 @@ final class ResumeIngestionStageLogger {
 
   <T> T execute(Path file, IngestionStage stage, Supplier<T> operation) {
     long startedAt = System.nanoTime();
-    log.info(
-        "Resume ingestion stage started file={} stage={}", filename(file), stage.code());
+    log.info("Resume ingestion stage started file={} stage={}", filename(file), stage.code());
     try {
       T value = operation.get();
       completed(file, stage, "succeeded", startedAt);
@@ -73,8 +72,7 @@ final class ResumeIngestionStageLogger {
         "failed",
         ResumeIngestionException.FailureCause.ROLLBACK_FAILED.code(),
         new ResumeIngestionException(
-            "Manual recovery is required",
-            ResumeIngestionException.FailureCause.ROLLBACK_FAILED));
+            "Manual recovery is required", ResumeIngestionException.FailureCause.ROLLBACK_FAILED));
   }
 
   private void completed(Path file, IngestionStage stage, String outcome, long startedAt) {

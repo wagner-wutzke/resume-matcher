@@ -7,8 +7,11 @@ public record CandidateVectorPoint(
     String id, Map<String, List<Float>> vectors, Map<String, String> payload) {
 
   public CandidateVectorPoint {
-    vectors = vectors.entrySet().stream().collect(java.util.stream.Collectors.toUnmodifiableMap(
-        Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
+    vectors =
+        vectors.entrySet().stream()
+            .collect(
+                java.util.stream.Collectors.toUnmodifiableMap(
+                    Map.Entry::getKey, entry -> List.copyOf(entry.getValue())));
     payload = Map.copyOf(payload);
   }
 }

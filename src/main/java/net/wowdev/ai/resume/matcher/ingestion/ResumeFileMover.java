@@ -48,8 +48,7 @@ public class ResumeFileMover {
           stage.code(),
           "failed",
           cause);
-      String destinationName =
-          stage == IngestionStage.FILE_MOVEMENT_HANDLED ? "handled" : "error";
+      String destinationName = stage == IngestionStage.FILE_MOVEMENT_HANDLED ? "handled" : "error";
       throw new ResumeIngestionException(
           "Resume file move failed at " + destinationName,
           ResumeIngestionException.FailureCause.FILE_MOVE_FAILED);

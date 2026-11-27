@@ -33,9 +33,34 @@
           <div class="split-view">
             <aside class="list-panel" aria-label="Candidates list">
               <div class="panel-heading"><h1>Candidates</h1></div>
-              <div class="candidate-list" aria-live="polite"></div>
+              <p class="candidate-list-status" id="candidate-list-status" role="status"
+                 aria-live="polite" aria-atomic="true"></p>
+              <div class="candidate-list" id="candidate-list" role="list"
+                   aria-label="Candidates" aria-busy="false"></div>
+              <div class="candidate-list-error" id="candidate-list-error" role="alert" hidden></div>
+              <button class="btn job-offer-button" id="retry-candidate-list" type="button" hidden>
+                Retry
+              </button>
+              <nav class="candidate-pagination" id="candidate-pagination"
+                   aria-label="Candidate pages" hidden>
+                <button class="btn job-offer-button" id="candidate-previous-page" type="button">
+                  Previous
+                </button>
+                <span id="candidate-page-indicator" aria-live="polite"></span>
+                <button class="btn job-offer-button" id="candidate-next-page" type="button">
+                  Next
+                </button>
+              </nav>
             </aside>
-            <section class="details-panel" aria-label="Selected candidate details"></section>
+            <section class="details-panel" id="candidate-details" aria-label="Selected candidate details"
+                     aria-live="polite" aria-busy="false">
+              <p id="candidate-details-status" role="status" aria-live="polite"></p>
+              <div id="candidate-details-content"></div>
+              <div id="candidate-details-error" role="alert" hidden></div>
+              <button class="btn job-offer-button" id="retry-candidate-details" type="button" hidden>
+                Retry
+              </button>
+            </section>
           </div>
         </section>
 

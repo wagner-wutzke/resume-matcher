@@ -39,9 +39,11 @@ public class JobOfferIdGenerator {
       var query = Query.query(Criteria.where("_id").is(COUNTER_ID));
       var update = new Update().inc("value", 1);
       var options = FindAndModifyOptions.options().returnNew(true);
-      JobOfferSequence sequence = mongoTemplate.findAndModify(
-          query, update, options, JobOfferSequence.class, COUNTER_COLLECTION);
-      if (sequence == null) throw new IllegalStateException("Job ID sequence update returned no value.");
+      JobOfferSequence sequence =
+          mongoTemplate.findAndModify(
+              query, update, options, JobOfferSequence.class, COUNTER_COLLECTION);
+      if (sequence == null)
+        throw new IllegalStateException("Job ID sequence update returned no value.");
       if (sequence.value() > MAX_SEQUENCE) {
         throw new IllegalStateException("The Job ID sequence is exhausted.");
       }
@@ -73,8 +75,9 @@ public class JobOfferIdGenerator {
       var query = Query.query(Criteria.where("_id").is(COUNTER_ID));
       var update = new Update().inc("value", 1);
       var options = FindAndModifyOptions.options().returnNew(true);
-      JobOfferSequence sequence = mongoTemplate.findAndModify(
-          query, update, options, JobOfferSequence.class, COUNTER_COLLECTION);
+      JobOfferSequence sequence =
+          mongoTemplate.findAndModify(
+              query, update, options, JobOfferSequence.class, COUNTER_COLLECTION);
       if (sequence == null || sequence.value() > MAX_SEQUENCE) {
         throw new IllegalStateException("The Job ID sequence is unavailable.");
       }

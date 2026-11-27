@@ -42,9 +42,7 @@ class CandidateDataExtractorTest {
     when(chatModel.call(any(Prompt.class))).thenThrow(new IllegalStateException("sensitive text"));
 
     ResumeIngestionException failure =
-        assertThrows(
-            ResumeIngestionException.class,
-            () -> extractor(chatModel).extract("resume"));
+        assertThrows(ResumeIngestionException.class, () -> extractor(chatModel).extract("resume"));
 
     assertEquals("Candidate extraction failed", failure.getMessage());
   }
@@ -53,17 +51,13 @@ class CandidateDataExtractorTest {
   void shouldRejectNullAndBlankModelResponses() {
     ChatModel nullModel = mock(ChatModel.class);
     when(nullModel.call(any(Prompt.class))).thenReturn(new ChatResponse(java.util.List.of()));
-    assertThrows(
-        ResumeIngestionException.class,
-        () -> extractor(nullModel).extract("resume"));
+    assertThrows(ResumeIngestionException.class, () -> extractor(nullModel).extract("resume"));
 
     ChatModel blankModel = mock(ChatModel.class);
     when(blankModel.call(any(Prompt.class)))
         .thenReturn(
             new ChatResponse(java.util.List.of(new Generation(new AssistantMessage("  ")))));
-    assertThrows(
-        ResumeIngestionException.class,
-        () -> extractor(blankModel).extract("resume"));
+    assertThrows(ResumeIngestionException.class, () -> extractor(blankModel).extract("resume"));
   }
 
   private CandidateDataExtractor extractor(ChatModel chatModel) {

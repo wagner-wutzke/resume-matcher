@@ -24,8 +24,7 @@ class ResumeIngestionStageLoggerTest {
 
     try {
       stageLogger.overallStarted(Path.of("private-resume.pdf"));
-      stageLogger.execute(
-          Path.of("private-resume.pdf"), IngestionStage.VALIDATION, () -> "valid");
+      stageLogger.execute(Path.of("private-resume.pdf"), IngestionStage.VALIDATION, () -> "valid");
       org.junit.jupiter.api.Assertions.assertThrows(
           ResumeIngestionException.class,
           () ->
@@ -96,7 +95,8 @@ class ResumeIngestionStageLoggerTest {
     assertEquals(
         "mongodb-unavailable",
         ResumeIngestionStageLogger.safeCause(
-            new IllegalStateException("sensitive exception text"), IngestionStage.MONGO_PERSISTENCE));
+            new IllegalStateException("sensitive exception text"),
+            IngestionStage.MONGO_PERSISTENCE));
     assertEquals(
         "qdrant-unavailable",
         ResumeIngestionStageLogger.safeCause(

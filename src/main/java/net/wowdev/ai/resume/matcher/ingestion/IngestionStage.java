@@ -13,8 +13,7 @@ enum IngestionStage {
       "experience-calculation", ResumeIngestionException.FailureCause.PROCESSING_FAILED),
   MONGO_SNAPSHOT("mongo-snapshot", ResumeIngestionException.FailureCause.MONGODB_UNAVAILABLE),
   QDRANT_SNAPSHOT("qdrant-snapshot", ResumeIngestionException.FailureCause.QDRANT_UNAVAILABLE),
-  MONGO_PERSISTENCE(
-      "mongo-persistence", ResumeIngestionException.FailureCause.MONGODB_UNAVAILABLE),
+  MONGO_PERSISTENCE("mongo-persistence", ResumeIngestionException.FailureCause.MONGODB_UNAVAILABLE),
   QDRANT_WRITE("qdrant-write", ResumeIngestionException.FailureCause.QDRANT_UNAVAILABLE),
   ROLLBACK("rollback", ResumeIngestionException.FailureCause.ROLLBACK_FAILED),
   FILE_MOVEMENT_HANDLED(

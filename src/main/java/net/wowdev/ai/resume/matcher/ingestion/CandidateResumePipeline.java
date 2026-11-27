@@ -80,8 +80,7 @@ public class CandidateResumePipeline {
     String cleanedText = textCleaner.clean(extractedText);
     if (cleanedText.isBlank()) {
       throw new ResumeIngestionException(
-          "PDF contains no usable text",
-          ResumeIngestionException.FailureCause.NO_EXTRACTABLE_TEXT);
+          "PDF contains no usable text", ResumeIngestionException.FailureCause.NO_EXTRACTABLE_TEXT);
     }
     return cleanedText;
   }

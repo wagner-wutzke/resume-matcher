@@ -31,7 +31,8 @@ class ResumeIngestionRunnerTest {
     InOrder order = inOrder(mongoIndex, qdrant);
     order.verify(mongoIndex).ensureEmailUniqueness();
     order.verify(qdrant).ensureEmailPayloadIndex();
-    org.junit.jupiter.api.Assertions.assertTrue(Files.isDirectory(properties.getHandledDirectory()));
+    org.junit.jupiter.api.Assertions.assertTrue(
+        Files.isDirectory(properties.getHandledDirectory()));
     org.junit.jupiter.api.Assertions.assertTrue(Files.isDirectory(properties.getErrorDirectory()));
     runner.close();
   }

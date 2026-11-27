@@ -1,8 +1,8 @@
 package net.wowdev.ai.resume.matcher.service;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.List;
 import net.wowdev.ai.resume.matcher.dto.JobOfferRequest;
 import net.wowdev.ai.resume.matcher.model.JobOffer;
 import net.wowdev.ai.resume.matcher.repository.JobOfferRepository;
@@ -17,9 +17,7 @@ public class JobOfferService {
   private final JobOfferIdGenerator idGenerator;
 
   public JobOfferService(
-      JobOfferRepository repository,
-      JobOfferValidator validator,
-      JobOfferIdGenerator idGenerator) {
+      JobOfferRepository repository, JobOfferValidator validator, JobOfferIdGenerator idGenerator) {
     this.repository = repository;
     this.validator = validator;
     this.idGenerator = idGenerator;
@@ -36,14 +34,12 @@ public class JobOfferService {
 
   public JobOffer update(String id, JobOfferRequest request) {
     validate(request);
-    var existing = findById(id)
-        .orElseThrow(() -> new JobOfferNotFoundException(id));
+    var existing = findById(id).orElseThrow(() -> new JobOfferNotFoundException(id));
     return save(toJobOffer(existing.id(), existing.jobId(), request));
   }
 
   public void delete(String id) {
-    findById(id)
-        .orElseThrow(() -> new JobOfferNotFoundException(id));
+    findById(id).orElseThrow(() -> new JobOfferNotFoundException(id));
     try {
       repository.deleteById(id);
     } catch (DataAccessException exception) {

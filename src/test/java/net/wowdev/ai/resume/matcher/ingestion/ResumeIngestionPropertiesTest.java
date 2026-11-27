@@ -107,7 +107,6 @@ class ResumeIngestionPropertiesTest {
         new ResumeIngestionProperties(input.toString(), "PT2S", "PT5S");
 
     assertThrows(
-        IllegalStateException.class,
-        () -> new ResumeIngestionDirectories(properties).prepare());
+        IllegalStateException.class, () -> new ResumeIngestionDirectories(properties).prepare());
   }
 }

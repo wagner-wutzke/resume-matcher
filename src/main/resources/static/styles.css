@@ -142,6 +142,31 @@ body {
   padding: 8px;
 }
 
+.candidate-list {
+  padding: 8px;
+}
+
+.candidate-pagination {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.candidate-list-status, #candidate-details-status {
+  padding: 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.candidate-list-error, #candidate-details-error {
+  padding: 12px 16px;
+  color: #9b4141;
+  font-size: 13px;
+}
+
 .details-column {
   min-width: 0;
   display: flex;

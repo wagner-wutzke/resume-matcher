@@ -7,5 +7,4 @@ public record JobOfferRequest(
     String requiredQualifications,
     Integer yearsOfExperience,
     String location,
-    String allocation) {
-}
+    String allocation) {}

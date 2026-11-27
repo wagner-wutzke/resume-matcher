@@ -21,15 +21,16 @@ public class JobOfferExceptionHandler {
   @ExceptionHandler(JobOfferValidationException.class)
   public ResponseEntity<JobOfferErrorResponse> handleValidationFailure(
       JobOfferValidationException exception) {
-    var response = new JobOfferErrorResponse(
-        "JOB_OFFER_VALIDATION_FAILED", "The job offer is invalid.", exception.getFieldErrors());
+    var response =
+        new JobOfferErrorResponse(
+            "JOB_OFFER_VALIDATION_FAILED", "The job offer is invalid.", exception.getFieldErrors());
     return ResponseEntity.badRequest().body(response);
   }
 
   @ExceptionHandler(JobOfferNotFoundException.class)
   public ResponseEntity<JobOfferErrorResponse> handleNotFound() {
-    var response = new JobOfferErrorResponse(
-        "JOB_OFFER_NOT_FOUND", "The job offer was not found.", null);
+    var response =
+        new JobOfferErrorResponse("JOB_OFFER_NOT_FOUND", "The job offer was not found.", null);
     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
   }
 
@@ -37,8 +38,9 @@ public class JobOfferExceptionHandler {
   public ResponseEntity<JobOfferErrorResponse> handlePersistenceFailure(
       JobOfferPersistenceException exception) {
     logger.warn("Job-offer persistence failed", exception);
-    var response = new JobOfferErrorResponse(
-        "JOB_OFFER_PERSISTENCE_UNAVAILABLE", "The job offer could not be saved.", null);
+    var response =
+        new JobOfferErrorResponse(
+            "JOB_OFFER_PERSISTENCE_UNAVAILABLE", "The job offer could not be saved.", null);
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
   }
 
@@ -46,8 +48,9 @@ public class JobOfferExceptionHandler {
   public ResponseEntity<JobOfferUnavailableResponse> handleRetrievalFailure(
       DataAccessException exception) {
     logger.warn("Could not retrieve job offers", exception);
-    var response = new JobOfferUnavailableResponse(
-        "JOB_OFFERS_UNAVAILABLE", "Job offers could not be loaded.");
+    var response =
+        new JobOfferUnavailableResponse(
+            "JOB_OFFERS_UNAVAILABLE", "Job offers could not be loaded.");
     return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(response);
   }
 }

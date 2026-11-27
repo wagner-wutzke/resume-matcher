@@ -78,5 +78,4 @@ public class ResumeIngestionProperties {
       throw new IllegalStateException("Resume ingestion " + name + " must be a positive duration");
     }
   }
-
 }

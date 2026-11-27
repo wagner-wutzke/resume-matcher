@@ -47,7 +47,8 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertFalse(result.successful());
     assertFalse(result.manualRecoveryRequired());
@@ -63,8 +64,7 @@ class CandidateResumeProcessorTest {
     Candidate previous = candidate("mongo-1", "Previous candidate");
     CandidateVectorSnapshot priorPoints =
         new CandidateVectorSnapshot(
-            List.of(
-                new CandidateVectorPoint("point-id", java.util.Map.of(), java.util.Map.of())));
+            List.of(new CandidateVectorPoint("point-id", java.util.Map.of(), java.util.Map.of())));
     CandidateResumePipeline pipeline = Mockito.mock(CandidateResumePipeline.class);
     CandidateRepository candidates = Mockito.mock(CandidateRepository.class);
     CandidateVectorRepository vectors = Mockito.mock(CandidateVectorRepository.class);
@@ -80,7 +80,8 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertFalse(result.successful());
     assertFalse(result.manualRecoveryRequired());
@@ -113,7 +114,8 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertFalse(result.successful());
     assertTrue(result.manualRecoveryRequired());
@@ -135,7 +137,8 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertTrue(result.successful());
     assertFalse(result.manualRecoveryRequired());
@@ -163,7 +166,8 @@ class CandidateResumeProcessorTest {
     try {
       ResumeProcessingResult result =
           new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                  pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+              .process(SOURCE);
 
       assertTrue(result.successful());
       String logs =
@@ -202,7 +206,8 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertFalse(result.successful());
     verify(candidates, never()).replaceByEmail(any(Candidate.class));
@@ -224,12 +229,14 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertFalse(result.successful());
     assertFalse(result.manualRecoveryRequired());
     verify(candidates, never()).deleteByEmail(candidate.email());
-    verify(vectors, never()).restoreByEmail(eq(candidate.email()), any(CandidateVectorSnapshot.class));
+    verify(vectors, never())
+        .restoreByEmail(eq(candidate.email()), any(CandidateVectorSnapshot.class));
     verify(mover).moveToError(SOURCE);
   }
 
@@ -243,7 +250,8 @@ class CandidateResumeProcessorTest {
 
     ResumeProcessingResult result =
         new CandidateResumeProcessor(
-            pipeline, new CandidateStoreCoordinator(candidates, vectors), mover).process(SOURCE);
+                pipeline, new CandidateStoreCoordinator(candidates, vectors), mover)
+            .process(SOURCE);
 
     assertFalse(result.successful());
     verify(candidates, never()).findByEmail(any());

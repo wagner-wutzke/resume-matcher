@@ -191,8 +191,7 @@ public class QdrantCandidateVectorRepository implements CandidateVectorRepositor
         .forEach(
             (key, value) ->
                 builder.putPayload(
-                    key,
-                    JsonWithInt.Value.newBuilder().setStringValue(value).build()));
+                    key, JsonWithInt.Value.newBuilder().setStringValue(value).build()));
     return builder.build();
   }
 
