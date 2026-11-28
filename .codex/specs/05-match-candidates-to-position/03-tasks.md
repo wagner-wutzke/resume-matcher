@@ -72,9 +72,12 @@
 - [x] **Task 4.2 — Request and render ranked matches:** Call the matching endpoint for the selected
   position, prevent duplicate in-flight submissions, render results in ranking order with a
   candidate-name/position/percentage heading that opens candidate details and an explanation below,
-  clear stale results on position changes or new requests, and handle empty and retryable error
-  states. Guard against stale asynchronous responses. Add UI behavior tests (**BR08, FR06, FR08,
-  AC01–AC02, AC04, AC07–AC08, AC10–AC11**).
+  keep the titled result list hidden until the request completes successfully, use the Job
+  Description details typography, title the list **Matching Candidates**, collapse Job Offer
+  Details after successful results load with an accessible expand/collapse control, clear
+  stale results on position changes or new requests, and handle empty and retryable error states.
+  Guard against stale asynchronous responses. Add UI behavior tests (**BR08, FR06, FR08, AC01–AC02,
+  AC04, AC07–AC08, AC10–AC12**).
 - [x] **Task 4.3 — Show candidate match details and return to results:** Fetch details from the
   existing `/api/candidates/{id}` endpoint, associate the returned details with the selected match
   explanation and position, render structured fields and experiences, and return to the preserved
@@ -127,3 +130,9 @@
   position is selected and style it with the exact color `#198754`. Add focused markup and UI tests
   for action order, selected/no-selection visibility, exact color, and preservation of the existing
   job-offer actions (**FR06, AC02**).
+- [ ] **Task 7.2 — Present matching results with details collapse:** Add the **Matching Candidates**
+  title and result list hidden before a request and while it is pending; reveal them only after a
+  successful response. Match the Job Description details typography and provide an accessible
+  control that collapses Job Offer Details after successful matching and expands it on request. Keep
+  the result region hidden after failures and keep the details panel expanded during loading and
+  failures. Add focused UI tests (**FR06, AC12**).

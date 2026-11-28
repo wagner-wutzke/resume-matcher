@@ -1,11 +1,14 @@
 const positionList = document.querySelector("#position-list");
 const positionDetails = document.querySelector("#position-details");
+const positionDetailsControls = document.querySelector("#position-details-controls");
+const togglePositionDetailsButton = document.querySelector("#toggle-position-details");
 const candidateMatches = document.querySelector("#candidate-matches");
 const findMatchesButton = document.querySelector("#find-matches");
 const matchStatus = document.querySelector("#match-status");
 const matchEmpty = document.querySelector("#match-empty");
 const matchError = document.querySelector("#match-error");
 const retryMatchesButton = document.querySelector("#retry-matches");
+const matchResultsRegion = document.querySelector("#match-results-region");
 const matchResultsList = document.querySelector("#match-results");
 const matchDetailsPanel = document.querySelector("#match-details");
 const backToMatchResultsButton = document.querySelector("#back-to-match-results");
@@ -386,6 +389,7 @@ function clearMatchResults() {
   findMatchesButton.disabled = false;
   matchResultsList.setAttribute("aria-busy", "false");
   matchResultsList.hidden = false;
+  matchResultsRegion.hidden = true;
   matchResultsList.replaceChildren();
   matchStatus.textContent = "";
   matchEmpty.hidden = true;
@@ -399,6 +403,16 @@ function clearMatchResults() {
   matchDetailsError.textContent = "";
   matchDetailsError.hidden = true;
   retryMatchDetailsButton.hidden = true;
+  setPositionDetailsExpanded(true);
+  positionDetailsControls.hidden = true;
+}
+
+function setPositionDetailsExpanded(expanded) {
+  positionDetails.hidden = !expanded;
+  togglePositionDetailsButton.textContent = expanded
+    ? "Collapse Job Offer Details"
+    : "Expand Job Offer Details";
+  togglePositionDetailsButton.setAttribute("aria-expanded", String(expanded));
 }
 
 function renderMatchResults(items) {
@@ -573,6 +587,7 @@ async function loadMatches() {
   matchRequestInFlight = true;
   currentMatchResults = [];
   matchPositionId = positionId;
+  matchResultsRegion.hidden = true;
   matchResultsList.replaceChildren();
   matchResultsList.setAttribute("aria-busy", "true");
   matchStatus.textContent = "Finding matching candidates…";
@@ -581,6 +596,8 @@ async function loadMatches() {
   matchError.hidden = true;
   retryMatchesButton.hidden = true;
   matchDetailsPanel.hidden = true;
+  positionDetailsControls.hidden = true;
+  setPositionDetailsExpanded(true);
   matchDetailsRequestGeneration += 1;
   selectedMatch = null;
   matchResultsList.hidden = false;
@@ -612,11 +629,14 @@ async function loadMatches() {
     currentMatchResults = result.items;
     matchPositionId = positionId;
     matchStatus.textContent = "";
+    matchResultsRegion.hidden = false;
     if (currentMatchResults.length === 0) {
       matchEmpty.hidden = false;
     } else {
       renderMatchResults(currentMatchResults);
     }
+    positionDetailsControls.hidden = false;
+    setPositionDetailsExpanded(false);
   } catch {
     if (requestGeneration !== matchRequestGeneration
         || !selectedPosition
@@ -874,6 +894,9 @@ function showFormError(message) {
 newButton.addEventListener("click", openNewOfferForm);
 findMatchesButton.addEventListener("click", loadMatches);
 retryMatchesButton.addEventListener("click", loadMatches);
+togglePositionDetailsButton.addEventListener("click", () => {
+  setPositionDetailsExpanded(positionDetails.hidden);
+});
 backToMatchResultsButton.addEventListener("click", returnToMatchResults);
 retryMatchDetailsButton.addEventListener("click", () =>
   selectedMatch ? loadMatchCandidateDetails(selectedMatch) : undefined);

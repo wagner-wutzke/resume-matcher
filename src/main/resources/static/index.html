@@ -82,19 +82,28 @@
                 </button>
               </div>
               <div class="alert alert-danger mx-4 mt-3" id="job-offer-delete-error" role="alert" hidden></div>
+              <div class="details-panel-controls" id="position-details-controls" hidden>
+                <button class="details-panel-toggle" id="toggle-position-details" type="button"
+                        aria-expanded="false" aria-controls="position-details">
+                  Expand Job Offer Details
+                </button>
+              </div>
               <section class="details-panel" id="position-details"
                        aria-label="Selected position details" aria-live="polite"></section>
               <section class="details-panel" id="candidate-matches"
                        aria-label="Matches for selected position" hidden>
                 <p id="match-status" role="status" aria-live="polite" aria-atomic="true"></p>
-                <p id="match-empty" role="status" aria-live="polite" hidden>
-                  No matching candidates found.
-                </p>
                 <div id="match-error" role="alert" hidden></div>
                 <button class="btn job-offer-button" id="retry-matches" type="button" hidden>
                   Retry
                 </button>
-                <ol class="match-results-list" id="match-results" aria-label="Ranked candidate matches" aria-busy="false"></ol>
+                <div id="match-results-region" hidden>
+                  <h2 class="detail-title match-list-title">Matching Candidates</h2>
+                  <p id="match-empty" role="status" aria-live="polite" hidden>
+                    No matching candidates found.
+                  </p>
+                  <ol class="match-results-list" id="match-results" aria-label="Ranked candidate matches" aria-busy="false"></ol>
+                </div>
                 <section id="match-details" aria-label="Candidate match details" aria-busy="false" hidden>
                   <button class="btn job-offer-button" id="back-to-match-results" type="button">
                     Back to results

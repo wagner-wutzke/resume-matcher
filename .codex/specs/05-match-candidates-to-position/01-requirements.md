@@ -166,8 +166,14 @@ color `#198754`. Show a loading state while the request is running. On success, 
 ascending rank order. Each result has a clickable heading in the form
 `Candidate Name - Position - 85% match`; activating the heading opens that candidate's current
 match-details view. Do not display list-number markers or ordinal ranks in the result heading. Show
-the concise explanation below the heading. The percentage is display-only and does not alter result
-order. A new request for another selected position replaces prior results and clears stale
+the concise explanation below the heading. Use the same 14px body typography and text color as the
+Job Description details field. Label the list **Matching Candidates**. The percentage is
+display-only and does not alter result order. Keep the **Matching Candidates** title and result list
+hidden before a search and while it is running. Reveal the titled results region only after a
+successful response completes; keep it hidden after a failed search. After a successful search has
+loaded the result list, collapse the selected Job Offer Details panel and provide a control to
+expand or collapse it again. Keep Job Offer Details expanded while a search is running and after a
+failed search. A new request for another selected position replaces prior results and clears stale
 selection/details. If there are no matches, show the empty state and no stale results.
 
 ### FR07 — Show match details
@@ -316,6 +322,19 @@ ranking. Matching failure must not prevent use of position management or the Can
 - **And** results and logs contain no resume source text, prompts, raw model response, or vector
   values.
 - **And** result explanations and summaries contain only the fields permitted by FR05.
+
+### AC12 — Matching result presentation and position-details collapse
+
+- **Given** a match request completes successfully
+- **When** the matching result list is displayed
+- **Then** it is titled **Matching Candidates** and uses the same 14px body typography and text color
+  as the Job Description field in the position details panel.
+- **And** the Job Offer Details panel is collapsed with an accessible control to expand or collapse
+  it again.
+- **And** the Job Offer Details panel remains expanded while a request is running and after a
+  request fails.
+- **And** the Matching Candidates title and list remain hidden until a successful Find Matches
+  request completes, and remain hidden during loading and after a failure.
 
 ## 8. Error Cases
 

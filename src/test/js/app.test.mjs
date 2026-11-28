@@ -107,12 +107,15 @@ function runApp(fetch, appGlobals = {}, candidateMode = false) {
   const elements = new Map([
     ["#position-list", new FakeElement()],
     ["#position-details", new FakeElement()],
+    ["#position-details-controls", new FakeElement()],
+    ["#toggle-position-details", new FakeElement()],
     ["#candidate-matches", new FakeElement()],
     ["#find-matches", new FakeElement()],
     ["#match-status", new FakeElement()],
     ["#match-empty", new FakeElement()],
     ["#match-error", new FakeElement()],
     ["#retry-matches", new FakeElement()],
+    ["#match-results-region", new FakeElement()],
     ["#match-results", new FakeElement()],
     ["#match-details", new FakeElement()],
     ["#back-to-match-results", new FakeElement()],
@@ -167,6 +170,7 @@ function runApp(fetch, appGlobals = {}, candidateMode = false) {
   elements.get("#match-empty").hidden = true;
   elements.get("#match-error").hidden = true;
   elements.get("#retry-matches").hidden = true;
+  elements.get("#match-results-region").hidden = true;
   elements.get("#match-details").hidden = true;
   elements.get("#match-details-error").hidden = true;
   elements.get("#retry-match-details").hidden = true;
@@ -268,6 +272,7 @@ test("uses the specified palette, page space, and responsive split layout", () =
   assert.match(styles, /--accent-teal:\s*#34d4bd;/);
   assert.match(styles, /\.candidate-list\s+\[role="listitem"\]\s*\{[^}]*border-bottom:\s*1px solid var\(--line\);/s);
   assert.match(styles, /\.position-list\s+\.position-entry\s*\{[^}]*border-bottom:\s*1px solid var\(--line\);/s);
+  assert.match(styles, /\.match-results-list\s*\{[^}]*font-size:\s*14px;[^}]*line-height:\s*1\.5;/s);
   assert.match(styles, /\.app-header\s*\{[^}]*linear-gradient\(105deg, var\(--header-navy\), #263e70\)/s);
   assert.match(styles, /\.position-entry\.selected\s*\{[^}]*border-left-color:\s*var\(--royal-blue\);/s);
   assert.match(styles, /\.detail-field\s*>\s*dt\s*\{[^}]*font-size:\s*14px;/s);
@@ -289,6 +294,8 @@ test("provides accessible candidate pagination and retry regions without changin
 
 test("provides selected-position match controls, live states, result list, and details navigation", () => {
   assert.match(page, /id="candidate-matches"[^>]*aria-label="Matches for selected position"[^>]*hidden/);
+  assert.match(page, /<div id="match-results-region" hidden>[\s\S]*?<h2 class="detail-title match-list-title">Matching Candidates<\/h2>/);
+  assert.match(page, /id="toggle-position-details" type="button"[\s\S]*?aria-controls="position-details"/);
   assert.match(page, /id="delete-job-offer" type="button" hidden>Delete<\/button>[\s\S]*?id="find-matches" type="button" hidden>[\s\S]*?Find Matches/);
   assert.match(page, /id="match-status" role="status" aria-live="polite"/);
   assert.match(page, /id="match-empty" role="status" aria-live="polite" hidden/);
@@ -369,6 +376,19 @@ test("requests matches for the selected position and renders ranked summaries as
   assert.equal(resultList.children[0].children[0].children[0].innerHTML, "");
   assert.equal(elements.get("#match-status").textContent, "");
   assert.equal(elements.get("#match-results").attributes.get("aria-busy"), "false");
+  const positionDetails = elements.get("#position-details");
+  const toggleDetails = elements.get("#toggle-position-details");
+  assert.equal(positionDetails.hidden, true);
+  assert.equal(elements.get("#position-details-controls").hidden, false);
+  assert.equal(toggleDetails.attributes.get("aria-expanded"), "false");
+  assert.equal(toggleDetails.textContent, "Expand Job Offer Details");
+  await toggleDetails.click();
+  assert.equal(positionDetails.hidden, false);
+  assert.equal(toggleDetails.attributes.get("aria-expanded"), "true");
+  assert.equal(toggleDetails.textContent, "Collapse Job Offer Details");
+  await toggleDetails.click();
+  assert.equal(positionDetails.hidden, true);
+  assert.equal(toggleDetails.attributes.get("aria-expanded"), "false");
 });
 
 test("does not request matches until a position is selected", async () => {
@@ -384,6 +404,33 @@ test("does not request matches until a position is selected", async () => {
   await elements.get("#find-matches").click();
 
   assert.equal(requests.some((url) => url.endsWith("/matches")), false);
+});
+
+test("shows the matching title and list only after Find Matches completes", async () => {
+  let resolveMatchRequest;
+  const elements = runApp((url) => {
+    if (url === "/api/job-offers") {
+      return Promise.resolve({ ok: true, json: async () => [position("position-1")] });
+    }
+    if (url.endsWith("/matches")) {
+      return new Promise((resolve) => { resolveMatchRequest = resolve; });
+    }
+    return Promise.resolve({ ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) });
+  });
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+  assert.equal(elements.get("#match-results-region").hidden, true);
+  assert.equal(elements.get("#match-results").children.length, 0);
+
+  const pendingMatchRequest = elements.get("#find-matches").click();
+  await flushApp();
+  assert.equal(elements.get("#match-status").textContent, "Finding matching candidates…");
+  assert.equal(elements.get("#match-results-region").hidden, true);
+
+  resolveMatchRequest({ ok: true, json: async () => ({ items: [] }) });
+  await pendingMatchRequest;
+  assert.equal(elements.get("#match-results-region").hidden, false);
+  assert.equal(elements.get("#match-empty").hidden, false);
 });
 
 test("shows empty and retryable error states and retries the selected position", async () => {
@@ -405,12 +452,15 @@ test("shows empty and retryable error states and retries the selected position",
   await flushApp();
   assert.equal(elements.get("#match-empty").hidden, false);
   assert.equal(elements.get("#match-error").hidden, true);
+  assert.equal(elements.get("#position-details").hidden, true);
 
   await elements.get("#find-matches").click();
   await flushApp();
   assert.equal(elements.get("#match-error").textContent, "Unable to find matches. Please retry.");
   assert.equal(elements.get("#match-error").hidden, false);
   assert.equal(elements.get("#retry-matches").hidden, false);
+  assert.equal(elements.get("#match-results-region").hidden, true);
+  assert.equal(elements.get("#position-details").hidden, false);
   assert.doesNotMatch(elements.get("#match-error").textContent, /PRIVATE/);
 
   await elements.get("#retry-matches").click();

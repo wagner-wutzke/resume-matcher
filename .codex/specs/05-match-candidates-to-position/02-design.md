@@ -221,9 +221,12 @@ Extend the Open Positions experience in `static/app.js` and `static/index.html`:
 4. On success, render results in their existing ordinal rank order without showing list-number
    markers. Each entry heading is a keyboard-accessible link-style button labeled
    `Candidate Name - Position - 85% match`; it opens that candidate's current match-details view.
-   Render the explanation below the heading. Render all values as text, not HTML. The percentage is
-   display-only and does not alter order. For an empty `items` array, show an empty-result message
-   without an error.
+   Keep the titled result region hidden before the request and during loading. Reveal it only after a
+   successful response completes. Title the list **Matching Candidates**. Use the same 14px body
+   typography and text color as the Job Description details field for result headings and
+   explanations. Render all values as text, not HTML. The percentage is display-only and does not
+   alter order. For an empty `items` array, reveal the title and show an empty-result message without
+   an error. Keep the titled result region hidden after a failed request.
 5. Selecting a result opens a dedicated match-details view. Fetch
    `GET /api/candidates/{candidate.id}` and render the Feature 04 details and experiences together
    with that result's explanation. Keep the result array in frontend state. A **Back to results**
@@ -235,6 +238,10 @@ Extend the Open Positions experience in `static/app.js` and `static/index.html`:
    the current attempted request, show a generic retryable error, and do not present partial or
    stale
    results as current.
+8. Keep Job Offer Details expanded while a match request is running or has failed. After a
+   successful response is rendered, including an empty successful response, collapse Job Offer
+   Details and expose an accessible expand/collapse control. Selecting another position resets the
+   panel to expanded.
 
 Use semantic buttons/list markup and live regions for loading, empty, and error states. Preserve
 keyboard operation. Existing candidate details rendering conventions (text nodes, empty-value
@@ -259,7 +266,7 @@ placeholder, and empty-experience message) apply to the match-details view.
 |----------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | AC01–AC02            | Controller/service tests verify selected position ID, missing-position response, and no retrieval for a missing position; UI tests verify selected-only action placement after Delete and exact `#198754` color. |
 | AC03                 | Retriever and service tests verify semantic-only retrieval, duplicate profile/experience hit deduplication, MongoDB resolution, and ignored Qdrant score/order data.                    |
-| AC04                 | Prompt/validator tests verify evidence instructions and valid percentage bounds; API and UI tests verify the score field, `Candidate Name - Position - P% match` clickable heading, and result order. |
+| AC04, AC12            | Prompt/validator tests verify evidence instructions and valid percentage bounds; API/UI tests verify the score field, clickable heading, result order, list title, typography, and details collapse control. |
 | AC05                 | Configuration/service/ranker/aggregator tests verify limits, chunking, Virtual Threads, joins, ordering independent of percentages, and truncation.                                        |
 | AC06                 | Configuration tests verify zero, negative, non-integer, and valid values/defaults.                                                                                                      |
 | AC07                 | Service/UI tests verify empty successful results and no LLM call for an empty pool.                                                                                                     |
