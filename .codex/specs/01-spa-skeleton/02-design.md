@@ -126,10 +126,15 @@ or display candidate data.
 - Provide **Candidates** and **Open Positions** tabs.
 - Use a two-panel layout in each tab, with a list area on the left and a details area on the right.
 - Keep candidate list and details content empty in this phase.
-- Use a simple dark gray and royal blue palette and let the application occupy the available page
-  space.
-- Keep the layout clear at supported viewport sizes. Exact colors, typography, responsive
-  breakpoints, and empty/failure copy remain presentation choices.
+- Use a high-contrast navy, indigo, and teal palette. Use navy for the header, bright teal as a
+  header accent, indigo for primary actions and selected states, and a pale blue-gray canvas behind
+  white workspace panels.
+- Distinguish selected list entries with a pale indigo background, a prominent indigo leading edge,
+  and stronger text weight. Separate panels with clear borders and a visible soft shadow.
+- Add a fine horizontal gray separator below each candidate and Open Positions list entry.
+- Keep the layout clear at supported viewport sizes. Colors are `#19294b` for navy, `#3657d6` for
+  indigo, `#34d4bd` for teal, and `#edf2fb` for the canvas. Other spacing and typography remain
+  presentation choices.
 
 ## 6. Error Handling and Data Safety
 

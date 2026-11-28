@@ -148,7 +148,8 @@ is required.
 
 The current markup already has a left candidate list and right details panel. Add semantic list and
 pagination controls with keyboard operation, selected-state attributes, and live status regions for
-loading, empty, and error messages.
+loading, empty, and error messages. Candidate entries show only `[name] - [position]` and each entry
+has a fine gray horizontal separator below it.
 
 ## 5. Error Handling and Privacy
 
@@ -164,7 +165,7 @@ loading, empty, and error messages.
 
 | Acceptance criterion | Design verification                                                                                            |
 |----------------------|----------------------------------------------------------------------------------------------------------------|
-| AC01                 | Controller/service/repository test verifies first-page summary fields, ordering, and a bounded result.         |
+| AC01                 | Controller/service/repository tests verify first-page summary fields, ordering, and a bounded result; UI tests verify the `[name] - [position]` label and separator. |
 | AC02                 | Repository and controller tests verify 15-record pages, page metadata, boundaries, and bounded responses.      |
 | AC03                 | UI test verifies selection, ID-based details loading, and fields/experience rendering.                         |
 | AC04                 | UI test selects two entries and verifies the second selection replaces the first details.                      |

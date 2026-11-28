@@ -40,9 +40,10 @@
   Open Positions tab. Add focused markup/accessibility verification (**FR03, FR05–FR06, NFR03–NFR04,
   AC02, AC05, AC07, AC11**).
 - [x] **Task 2.2 — Load and render candidate summaries and pages:** Fetch the first page when the
-  Candidates tab opens, render no more than 15 summaries using text-safe DOM APIs, show the BR04
-  fields and missing-value placeholders, handle previous/next boundaries, refresh on tab re-entry,
-  and display loading, empty, and retryable list-error states. Add focused UI behavior tests
+  Candidates tab opens, render no more than 15 summaries using text-safe DOM APIs, show only the
+  BR04 name/position label and missing-value placeholders, separate entries with a fine gray line,
+  handle previous/next boundaries, refresh on tab re-entry, and display loading, empty, and
+  retryable list-error states. Add focused UI behavior tests
   (**BR02, BR04, BR07, FR01–FR03, FR05–FR06, NFR01–NFR03, AC01–AC02, AC05, AC07, AC11**).
 - [x] **Task 2.3 — Load and render selected candidate details:** Request details by candidate ID;
   render the BR05 fields and experiences with missing-value and empty-experience states; clear

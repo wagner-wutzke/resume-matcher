@@ -49,7 +49,10 @@ panel.
   **On-site**.
 - [ ] Item 13: Provide a required **Company** field for the hiring company's name. In the Details
   panel, display Company above the Job Description section.
-- [ ] Item 14: Render Job Description and Required Qualifications as Markdown in the Details panel.
+- [ ] Item 14: Render plain-text formatting markers in Job Description and Required
+  Qualifications in the Details panel: `**text**` for bold, `*text*` for italic, and lines
+  beginning `- ` for bullet points. Treat other content, including HTML-looking text, as literal
+  text.
 - [ ] Item 15: Use the same visual style as **New Job Offer** for all buttons in the job-offer
   feature, including action, form, and discard-confirmation buttons. Set them to a font size of
   `0.75rem` and a height of `35px`. Offer list entries are not buttons and are excluded from this
@@ -64,6 +67,7 @@ panel.
   panel.
 - [ ] Item 20: Provide a required numeric **Years of Experience** field in the create/edit form and
   persist its value with the job offer.
+- [ ] Item 21: Display `.detail-field > dt` labels at a font size of `14px`.
 
 ### Out of Scope
 
@@ -87,6 +91,10 @@ panel.
   suffix for each new offer. The recruiter does not enter or edit this value.
 - **BR08 — Years of Experience:** A numeric Years of Experience value is required and is persisted
   with each job offer.
+- **BR09 — Position detail formatting:** Job Description and Required Qualifications support only
+  the specified bold, italic, and bullet markers. Render generated elements safely without
+  interpreting arbitrary HTML or other Markdown syntax.
+- **BR10 — Detail label typography:** `.detail-field > dt` labels use a `14px` font size.
 
 ## 4. Acceptance Criteria
 
@@ -212,11 +220,13 @@ These scenarios must be validated and verified by the `@reviewer`.
 - **When** a job offer is displayed in the Details panel
 - **Then** its Company value appears above the Job Description section.
 
-### AC16 — Markdown content in job details
+### AC16 — Plain-text formatting markers in job details
 
-- **Given** a job offer has Markdown in its Job Description or Required Qualifications
+- **Given** a job offer has `**bold**`, `*italic*`, or `- ` bullet markers in its Job Description
+  or Required Qualifications
 - **When** the offer is displayed in the Details panel
-- **Then** those fields are displayed with their Markdown formatting.
+- **Then** those fields display the requested bold, italic, or bullet formatting.
+- **And** HTML-looking content and unsupported formatting syntax display as literal text.
 
 ### AC17 — Job-offer button sizing
 
@@ -248,4 +258,10 @@ These scenarios must be validated and verified by the `@reviewer`.
   offer is loaded for editing.
 - **And** the Years of Experience value is displayed in the offer's Details panel, preserving the
   SPA Skeleton's existing detail-view requirement.
+
+### AC21 — Detail label font size
+
+- **Given** job-position or candidate detail fields are displayed
+- **When** a `.detail-field` label is rendered as a direct `dt` child
+- **Then** the label uses a font size of `14px`.
 

@@ -40,9 +40,9 @@
 - [x] **Task 2.2 — Add split panels and candidate placeholder:** Provide left list and right details
   areas in both tabs, and keep both Candidates areas empty. Add UI verification (**FR04, BR03,
   AC03**).
-- [x] **Task 2.3 — Apply the specified visual design:** Use the dark gray and royal blue palette,
-  available page space, and specified frontend stack. Verify layout usability at supported
-  viewport sizes (**NFR01–NFR02**).
+- [x] **Task 2.3 — Apply the specified visual design:** Use the navy, indigo, and teal palette,
+  distinct selected states, clear panel separation, available page space, and specified frontend
+  stack. Verify layout usability at supported viewport sizes (**NFR01–NFR02**).
 
 ## Phase 3: Open Positions Retrieval and Interaction
 

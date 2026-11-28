@@ -1,12 +1,14 @@
 :root {
   color-scheme: light;
-  --ink: #343a40;
-  --muted: #6c757d;
-  --line: #dee2e6;
+  --ink: #1d293d;
+  --muted: #53627a;
+  --line: #d4deed;
   --surface: #fff;
-  --canvas: #f3f4f6;
-  --royal-blue: #4169e1;
-  --royal-blue-soft: #a9bcf4;
+  --canvas: #edf2fb;
+  --royal-blue: #3657d6;
+  --royal-blue-soft: #e8edff;
+  --header-navy: #19294b;
+  --accent-teal: #34d4bd;
 }
 
 * {
@@ -20,7 +22,7 @@ html, body {
 }
 
 body {
-  background: var(--canvas);
+  background: linear-gradient(135deg, #eef3ff 0%, #f6f8fc 48%, #e8f4f3 100%);
   color: var(--ink);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -37,15 +39,16 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--surface);
-  border-bottom: 1px solid var(--line);
+  background: linear-gradient(105deg, var(--header-navy), #263e70);
+  border-bottom: 3px solid var(--accent-teal);
+  box-shadow: 0 5px 18px rgb(20 38 74 / 18%);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: var(--ink);
+  color: #fff;
   font-size: 17px;
   font-weight: 700;
   text-decoration: none;
@@ -57,14 +60,15 @@ body {
   height: 36px;
   place-items: center;
   border-radius: 11px;
-  background: var(--royal-blue);
-  color: #fff;
+  background: linear-gradient(135deg, var(--accent-teal), #8b7cff);
+  color: var(--header-navy);
+  box-shadow: 0 5px 14px rgb(6 14 37 / 24%);
   font-weight: 700;
 }
 
 .app-title {
   margin: 0;
-  color: #625b6e;
+  color: #d8e4ff;
   font-size: 14px;
 }
 
@@ -78,15 +82,17 @@ body {
 }
 
 .app-tabs {
-  gap: 28px;
-  padding-left: 8px;
-  border-bottom: 1px solid #ddd9e3;
+  gap: 12px;
+  padding: 0 12px;
+  border-bottom: 1px solid #cbd6e8;
 }
 
 .app-tabs .nav-link {
-  padding: 13px 4px;
+  margin-top: 10px;
+  padding: 11px 17px;
   border: 0;
-  border-bottom: 2px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-radius: 9px 9px 0 0;
   color: var(--muted);
   font-size: 14px;
   font-weight: 600;
@@ -96,6 +102,12 @@ body {
   background: transparent;
   border-bottom-color: var(--royal-blue);
   color: var(--royal-blue);
+  font-weight: 750;
+}
+
+.app-tabs .nav-link:hover:not(.active) {
+  background: #e4eafb;
+  color: #273b70;
 }
 
 .workspace-content {
@@ -114,14 +126,15 @@ body {
   display: grid;
   grid-template-columns: minmax(250px, 34%) 1fr;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid #cbd6e8;
+  border-radius: 16px;
   background: var(--surface);
-  box-shadow: 0 8px 28px rgb(46 39 59 / 4%);
+  box-shadow: 0 16px 38px rgb(30 50 91 / 12%), 0 3px 8px rgb(30 50 91 / 5%);
 }
 
 .list-panel {
   border-right: 1px solid var(--line);
+  background: linear-gradient(180deg, #f5f7ff 0%, #fff 58%);
 }
 
 .panel-heading {
@@ -129,11 +142,13 @@ body {
   padding: 0 22px;
   display: flex;
   align-items: center;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid #dbe3f1;
+  background: linear-gradient(90deg, #eaf0ff, #f4f8ff);
 }
 
 .panel-heading h1 {
   margin: 0;
+  color: #273b70;
   font-size: 15px;
   font-weight: 650;
 }
@@ -142,8 +157,16 @@ body {
   padding: 8px;
 }
 
+.position-list .position-entry {
+  border-bottom: 1px solid var(--line);
+}
+
 .candidate-list {
   padding: 8px;
+}
+
+.candidate-list [role="listitem"] {
+  border-bottom: 1px solid var(--line);
 }
 
 .candidate-pagination {
@@ -180,23 +203,35 @@ body {
   justify-content: flex-end;
   gap: 8px;
   border-bottom: 1px solid var(--line);
+  background: linear-gradient(90deg, #f8faff, #fff);
 }
 
 .position-entry {
   width: 100%;
-  padding: 14px;
+  margin: 3px 0;
+  padding: 14px 13px 14px 15px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-left: 4px solid transparent;
+  border-radius: 9px;
   background: transparent;
   color: var(--ink);
   text-align: left;
   font-size: 14px;
   cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 }
 
-.position-entry:hover, .position-entry.selected {
+.position-entry:hover {
+  background: #eaf0ff;
+  color: #273e91;
+}
+
+.position-entry.selected {
   background: var(--royal-blue-soft);
-  color: #2347a8;
+  border-left-color: var(--royal-blue);
+  color: #203caa;
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgb(54 87 214 / 10%);
 }
 
 .position-entry:focus-visible {
@@ -209,7 +244,7 @@ body {
   min-height: 35px;
   padding: 0 14px;
   border: 1px solid var(--royal-blue);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--royal-blue);
   color: #fff;
   font-size: 0.75rem;
@@ -218,17 +253,56 @@ body {
   align-items: center;
   justify-content: center;
   gap: 5px;
+  box-shadow: 0 3px 9px rgb(47 77 191 / 18%);
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
 }
 
 .job-offer-button:hover, .job-offer-button:focus-visible {
   border-color: #3156c5;
   background: #3156c5;
   color: #fff;
+  box-shadow: 0 5px 13px rgb(47 77 191 / 26%);
+}
+
+.job-offer-button:active {
+  transform: translateY(1px);
 }
 
 .job-offer-button:focus-visible {
   outline: 3px solid rgb(65 105 225 / 30%);
   outline-offset: 2px;
+}
+
+.match-results-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.match-result-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2347a8;
+  font: inherit;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.match-result-link:focus-visible {
+  outline: 3px solid rgb(65 105 225 / 30%);
+  outline-offset: 2px;
+}
+
+#find-matches {
+  border-color: #198754;
+  background: #198754;
+}
+
+#find-matches:hover, #find-matches:focus-visible {
+  border-color: #198754;
+  background: #198754;
+  box-shadow: 0 5px 13px rgb(25 135 84 / 27%);
 }
 
 .load-error {
@@ -244,20 +318,22 @@ body {
 
 .detail-title {
   margin: 0 0 25px;
-  font-size: 22px;
-  font-weight: 650;
+  color: #243a6b;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -0.02em;
 }
 
 .detail-field {
   margin: 0 0 10px;
 }
 
-.detail-field dt {
+.detail-field > dt {
   margin-bottom: 7px;
-  color: var(--muted);
-  font-size: 11px;
+  color: #3f5277;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: .08em;
+  letter-spacing: .06em;
   text-transform: uppercase;
 }
 
@@ -266,6 +342,19 @@ body {
   color: #514d58;
   font-size: 14px;
   white-space: pre-wrap;
+}
+
+.detail-field dd p {
+  margin-bottom: 0.5rem;
+}
+
+.detail-field dd p:last-child {
+  margin-bottom: 0;
+}
+
+.detail-field dd ul {
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
 }
 
 @media (max-width: 700px) {

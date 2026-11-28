@@ -29,7 +29,8 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
   empty in this feature phase.
 - An Open Positions tab with a left-side list of job offers and a right-side details area.
 - Retrieval and display of records from the MongoDB `job_offers` collection.
-- A simple dark gray and royal blue visual design that uses the available page space.
+- A high-contrast navy, indigo, and teal visual design with clear panel separation and selected
+  states that uses the available page space.
 - Frontend implementation using HTML, CSS, Bootstrap, and vanilla JavaScript.
 
 ### Out of Scope
@@ -88,7 +89,8 @@ easy**. It is a browser-based SPA served by the application at `http://localhost
 
 ## 6. Non-Functional Requirements
 
-- **NFR01 — Visual design:** Use a simple dark gray and royal blue palette and let the application
+- **NFR01 — Visual design:** Use a high-contrast navy, indigo, and teal palette, with clear
+  selected states and visible separation between the main workspace panels. Let the application
   use the available page space.
 - **NFR02 — Frontend technology:** Implement the SPA with HTML, CSS, Bootstrap, and vanilla
   JavaScript.

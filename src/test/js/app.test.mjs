@@ -97,7 +97,7 @@ class FakeElement {
   }
 }
 
-function runApp(fetch, markdownGlobals = {}, candidateMode = false) {
+function runApp(fetch, appGlobals = {}, candidateMode = false) {
   const appFetch = (url, options) => {
     if (!candidateMode && String(url).startsWith("/api/candidates")) {
       return Promise.resolve({ ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) });
@@ -107,6 +107,19 @@ function runApp(fetch, markdownGlobals = {}, candidateMode = false) {
   const elements = new Map([
     ["#position-list", new FakeElement()],
     ["#position-details", new FakeElement()],
+    ["#candidate-matches", new FakeElement()],
+    ["#find-matches", new FakeElement()],
+    ["#match-status", new FakeElement()],
+    ["#match-empty", new FakeElement()],
+    ["#match-error", new FakeElement()],
+    ["#retry-matches", new FakeElement()],
+    ["#match-results", new FakeElement()],
+    ["#match-details", new FakeElement()],
+    ["#back-to-match-results", new FakeElement()],
+    ["#match-details-content", new FakeElement()],
+    ["#match-details-status", new FakeElement()],
+    ["#match-details-error", new FakeElement()],
+    ["#retry-match-details", new FakeElement()],
     ["#new-job-offer", new FakeElement()],
     ["#edit-job-offer", new FakeElement()],
     ["#delete-job-offer", new FakeElement()],
@@ -150,6 +163,13 @@ function runApp(fetch, markdownGlobals = {}, candidateMode = false) {
     ["#retry-candidate-details", new FakeElement()],
     ["#candidates-tab", new FakeElement()],
   ]);
+  elements.get("#candidate-matches").hidden = true;
+  elements.get("#match-empty").hidden = true;
+  elements.get("#match-error").hidden = true;
+  elements.get("#retry-matches").hidden = true;
+  elements.get("#match-details").hidden = true;
+  elements.get("#match-details-error").hidden = true;
+  elements.get("#retry-match-details").hidden = true;
   [
     ["#job-company", "company"],
     ["#job-name", "jobName"],
@@ -177,12 +197,26 @@ function runApp(fetch, markdownGlobals = {}, candidateMode = false) {
       },
     },
   };
-  runInNewContext(script, { document, fetch: appFetch, bootstrap, ...markdownGlobals });
+  runInNewContext(script, { document, fetch: appFetch, bootstrap, ...appGlobals });
   return elements;
 }
 
 async function flushApp() {
   await new Promise((resolve) => setImmediate(resolve));
+}
+
+function position(id) {
+  return {
+    id,
+    jobId: `JD-${id}`,
+    company: "Example Company",
+    jobTitle: "Backend Engineer",
+    jobDescription: "Build services",
+    requiredQualifications: "Java and Spring",
+    yearsOfExperience: 5,
+    location: "Dublin",
+    allocation: "Remote",
+  };
 }
 
 test("renders offers and selected details as text", async () => {
@@ -209,8 +243,10 @@ test("renders offers and selected details as text", async () => {
   assert.equal(list.children[0].tagName, "DIV");
   assert.equal(list.children[0].attributes.get("role"), "option");
   assert.equal(elements.get("#position-details").textContent, "");
+  assert.equal(elements.get("#candidate-matches").hidden, true);
 
   list.children[0].click();
+  assert.equal(elements.get("#candidate-matches").hidden, false);
   assert.equal(list.children[0].attributes.get("aria-selected"), "true");
   const detailText = elements.get("#position-details").textContent;
   assert.match(detailText, /Backend Engineer/);
@@ -226,8 +262,15 @@ test("renders offers and selected details as text", async () => {
 
 test("uses the specified palette, page space, and responsive split layout", () => {
   assert.match(page, /bootstrap@5\.3\.3\/dist\/css\/bootstrap\.min\.css/);
-  assert.match(styles, /--ink:\s*#343a40;/);
-  assert.match(styles, /--royal-blue:\s*#4169e1;/);
+  assert.match(styles, /--ink:\s*#1d293d;/);
+  assert.match(styles, /--royal-blue:\s*#3657d6;/);
+  assert.match(styles, /--header-navy:\s*#19294b;/);
+  assert.match(styles, /--accent-teal:\s*#34d4bd;/);
+  assert.match(styles, /\.candidate-list\s+\[role="listitem"\]\s*\{[^}]*border-bottom:\s*1px solid var\(--line\);/s);
+  assert.match(styles, /\.position-list\s+\.position-entry\s*\{[^}]*border-bottom:\s*1px solid var\(--line\);/s);
+  assert.match(styles, /\.app-header\s*\{[^}]*linear-gradient\(105deg, var\(--header-navy\), #263e70\)/s);
+  assert.match(styles, /\.position-entry\.selected\s*\{[^}]*border-left-color:\s*var\(--royal-blue\);/s);
+  assert.match(styles, /\.detail-field\s*>\s*dt\s*\{[^}]*font-size:\s*14px;/s);
   assert.match(styles, /\.app-shell\s*\{[^}]*min-height:\s*100vh;/s);
   assert.match(styles, /@media\s*\(max-width:\s*700px\)[\s\S]*?grid-template-columns:\s*1fr;/);
 });
@@ -242,6 +285,387 @@ test("provides accessible candidate pagination and retry regions without changin
   assert.match(page, /id="retry-candidate-details" type="button" hidden/);
   assert.match(page, /id="positions-tab"/);
   assert.match(page, /id="position-list"/);
+});
+
+test("provides selected-position match controls, live states, result list, and details navigation", () => {
+  assert.match(page, /id="candidate-matches"[^>]*aria-label="Matches for selected position"[^>]*hidden/);
+  assert.match(page, /id="delete-job-offer" type="button" hidden>Delete<\/button>[\s\S]*?id="find-matches" type="button" hidden>[\s\S]*?Find Matches/);
+  assert.match(page, /id="match-status" role="status" aria-live="polite"/);
+  assert.match(page, /id="match-empty" role="status" aria-live="polite" hidden/);
+  assert.match(page, /id="match-error" role="alert" hidden/);
+  assert.match(page, /id="retry-matches" type="button" hidden/);
+  assert.match(page, /<ol class="match-results-list" id="match-results" aria-label="Ranked candidate matches"/);
+  assert.match(page, /id="match-details" aria-label="Candidate match details"[^>]*hidden/);
+  assert.match(page, /id="back-to-match-results" type="button"[\s\S]*?Back to results/);
+  assert.match(page, /id="match-details-status" role="status" aria-live="polite"/);
+  assert.match(page, /id="match-details-error" role="alert" hidden/);
+  assert.match(page, /id="retry-match-details" type="button" hidden/);
+  assert.match(page, /id="candidates-tab"/);
+});
+
+test("requests matches for the selected position and renders ranked summaries as text", async () => {
+  const requests = [];
+  const elements = runApp(async (url, options) => {
+    requests.push({ url, options });
+    if (url === "/api/job-offers") return { ok: true, json: async () => [position("position-1")] };
+    if (url === "/api/job-offers/position-1/matches") {
+      return {
+        ok: true,
+        json: async () => ({
+          positionId: "position-1",
+          items: [
+            {
+              rank: 1,
+              matchPercentage: 85,
+              candidate: {
+                id: "candidate-1",
+                fullname: "<img src=x onerror=alert(1)>",
+                position: "Engineer",
+                city: "Dublin",
+                country: "Ireland",
+                yearsOfExperience: "5 years",
+              },
+              explanation: "Evidence: relevant experience.",
+            },
+            {
+              rank: 2,
+              matchPercentage: 99,
+              candidate: {
+                id: "candidate-2",
+                fullname: "Second Candidate",
+                position: "Engineer",
+                city: "Cork",
+                country: "Ireland",
+                yearsOfExperience: "3 years",
+              },
+              explanation: "Evidence: related experience.",
+            },
+          ],
+        }),
+      };
+    }
+    return { ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) };
+  }, {}, true);
+  await flushApp();
+
+  const positionEntry = elements.get("#position-list").children[0];
+  positionEntry.click();
+  const findButton = elements.get("#find-matches");
+  assert.equal(findButton.hidden, false);
+  await findButton.click();
+  await flushApp();
+
+  const matchRequest = requests.find((request) => request.url.endsWith("/matches"));
+  assert.equal(matchRequest.url, "/api/job-offers/position-1/matches");
+  assert.equal(matchRequest.options.method, "POST");
+  const resultList = elements.get("#match-results");
+  assert.equal(resultList.children.length, 2);
+  assert.deepEqual(
+    resultList.children.map((item) => item.children[0].textContent),
+    ["<img src=x onerror=alert(1)> - Engineer - 85% match", "Second Candidate - Engineer - 99% match"],
+  );
+  assert.match(resultList.textContent, /<img src=x onerror=alert\(1\)>/);
+  assert.match(resultList.textContent, /Evidence: relevant experience\./);
+  assert.equal(resultList.children[0].children[0].children[0].innerHTML, "");
+  assert.equal(elements.get("#match-status").textContent, "");
+  assert.equal(elements.get("#match-results").attributes.get("aria-busy"), "false");
+});
+
+test("does not request matches until a position is selected", async () => {
+  const requests = [];
+  const elements = runApp(async (url) => {
+    requests.push(url);
+    if (url === "/api/job-offers") return { ok: true, json: async () => [position("position-1")] };
+    return { ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) };
+  });
+  await flushApp();
+
+  assert.equal(elements.get("#candidate-matches").hidden, true);
+  await elements.get("#find-matches").click();
+
+  assert.equal(requests.some((url) => url.endsWith("/matches")), false);
+});
+
+test("shows empty and retryable error states and retries the selected position", async () => {
+  let matchCalls = 0;
+  const elements = runApp(async (url) => {
+    if (url === "/api/job-offers") return { ok: true, json: async () => [position("position-1")] };
+    if (url.endsWith("/matches")) {
+      matchCalls += 1;
+      if (matchCalls === 1) return { ok: true, json: async () => ({ items: [] }) };
+      if (matchCalls === 2) return { ok: false, json: async () => ({ message: "PRIVATE" }) };
+      return { ok: true, json: async () => ({ items: [] }) };
+    }
+    return { ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) };
+  }, {}, true);
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+
+  await elements.get("#find-matches").click();
+  await flushApp();
+  assert.equal(elements.get("#match-empty").hidden, false);
+  assert.equal(elements.get("#match-error").hidden, true);
+
+  await elements.get("#find-matches").click();
+  await flushApp();
+  assert.equal(elements.get("#match-error").textContent, "Unable to find matches. Please retry.");
+  assert.equal(elements.get("#match-error").hidden, false);
+  assert.equal(elements.get("#retry-matches").hidden, false);
+  assert.doesNotMatch(elements.get("#match-error").textContent, /PRIVATE/);
+
+  await elements.get("#retry-matches").click();
+  await flushApp();
+  assert.equal(matchCalls, 3);
+  assert.equal(elements.get("#match-error").hidden, true);
+  assert.equal(elements.get("#match-empty").hidden, false);
+});
+
+test("clears a previous result set as soon as a new match request starts", async () => {
+  let matchCalls = 0;
+  let resolveSecondRequest;
+  const elements = runApp((url) => {
+    if (url === "/api/job-offers") return Promise.resolve({ ok: true, json: async () => [position("position-1")] });
+    if (url.endsWith("/matches")) {
+      matchCalls += 1;
+      if (matchCalls === 1) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            items: [{ rank: 1, matchPercentage: 74, candidate: { fullname: "Previous Candidate" }, explanation: "Previous." }],
+          }),
+        });
+      }
+      return new Promise((resolve) => { resolveSecondRequest = resolve; });
+    }
+    return Promise.resolve({ ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) });
+  }, {}, true);
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+  await elements.get("#find-matches").click();
+  await flushApp();
+  assert.match(elements.get("#match-results").textContent, /Previous Candidate/);
+
+  const pendingRequest = elements.get("#find-matches").click();
+  assert.equal(elements.get("#match-results").children.length, 0);
+  assert.equal(elements.get("#match-status").textContent, "Finding matching candidates…");
+  resolveSecondRequest({ ok: true, json: async () => ({ items: [] }) });
+  await pendingRequest;
+  assert.equal(elements.get("#match-empty").hidden, false);
+});
+
+test("prevents duplicate match requests and ignores a response after position changes", async () => {
+  let resolveFirstMatch;
+  const matchRequests = [];
+  const elements = runApp((url) => {
+    if (url === "/api/job-offers") {
+      return Promise.resolve({
+        ok: true,
+        json: async () => [position("position-1"), position("position-2")],
+      });
+    }
+    if (url.endsWith("/matches")) {
+      matchRequests.push(url);
+      if (matchRequests.length === 1) {
+        return new Promise((resolve) => { resolveFirstMatch = resolve; });
+      }
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          positionId: "position-2",
+          items: [{ rank: 1, matchPercentage: 83, candidate: { fullname: "Current Candidate" }, explanation: "Current explanation." }],
+        }),
+      });
+    }
+    return Promise.resolve({ ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) });
+  });
+  await flushApp();
+  const entries = elements.get("#position-list").children;
+  entries[0].click();
+  const firstClick = elements.get("#find-matches").click();
+  await flushApp();
+  await elements.get("#find-matches").click();
+  assert.equal(matchRequests.length, 1);
+  assert.equal(elements.get("#find-matches").disabled, true);
+
+  entries[1].click();
+  assert.equal(elements.get("#match-results").children.length, 0);
+  assert.equal(elements.get("#match-status").textContent, "");
+  await elements.get("#find-matches").click();
+  await flushApp();
+  assert.match(elements.get("#match-results").textContent, /Current Candidate/);
+
+  resolveFirstMatch({
+    ok: true,
+    json: async () => ({
+      positionId: "position-1",
+      items: [{ rank: 1, matchPercentage: 40, candidate: { fullname: "Stale Candidate" }, explanation: "Stale." }],
+    }),
+  });
+  await firstClick;
+  await flushApp();
+  assert.doesNotMatch(elements.get("#match-results").textContent, /Stale Candidate/);
+  assert.match(elements.get("#match-results").textContent, /Current Candidate/);
+});
+
+test("loads structured match details with the position explanation and returns without rerunning", async () => {
+  const requests = [];
+  const elements = runApp(async (url, options) => {
+    requests.push({ url, options });
+    if (url === "/api/job-offers") return { ok: true, json: async () => [position("position-1")] };
+    if (url.endsWith("/matches")) {
+      return {
+        ok: true,
+        json: async () => ({
+          positionId: "position-1",
+          items: [{
+            rank: 1,
+            matchPercentage: 88,
+            candidate: { id: "candidate-1", fullname: "Jane Doe", position: "Engineer" },
+            explanation: "Evidence: Java delivery. Gaps: no cloud work reported.",
+          }],
+        }),
+      };
+    }
+    if (url === "/api/candidates/candidate-1") {
+      return {
+        ok: true,
+        json: async () => ({
+          id: "candidate-1",
+          email: "jane@example.com",
+          fullname: "Jane Doe",
+          country: "Ireland",
+          city: "Dublin",
+          position: "Engineer",
+          skills: "Java, Spring",
+          allocation: "Remote",
+          yearsOfExperience: "5 years",
+          experiences: [{
+            title: "Backend Engineer",
+            company: "Example Ltd.",
+            period: "2020–present",
+            responsibilities: "Built APIs",
+            achievements: "Improved latency",
+          }],
+        }),
+      };
+    }
+    return { ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) };
+  }, {}, true);
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+  await elements.get("#find-matches").click();
+  await flushApp();
+  const originalResultNode = elements.get("#match-results").children[0];
+
+  await originalResultNode.children[0].children[0].click();
+  await flushApp();
+
+  assert.ok(requests.some((request) => request.url === "/api/candidates/candidate-1"));
+  const detailsText = elements.get("#match-details-content").textContent;
+  assert.match(detailsText, /Jane Doe/);
+  assert.match(detailsText, /Match for Backend Engineer · Example Company/);
+  assert.match(detailsText, /Evidence: Java delivery\. Gaps: no cloud work reported\./);
+  assert.match(detailsText, /jane@example\.com/);
+  assert.match(detailsText, /Java, Spring/);
+  assert.match(detailsText, /Example Ltd\./);
+  assert.match(detailsText, /Built APIs/);
+  assert.match(detailsText, /Improved latency/);
+  assert.equal(elements.get("#match-details").hidden, false);
+  assert.equal(elements.get("#match-results").hidden, true);
+
+  await elements.get("#back-to-match-results").click();
+  assert.equal(elements.get("#match-details").hidden, true);
+  assert.equal(elements.get("#match-results").hidden, false);
+  assert.equal(elements.get("#match-results").children[0], originalResultNode);
+  assert.equal(requests.filter((request) => request.url.endsWith("/matches")).length, 1);
+});
+
+test("shows retry for missing match details and retries the selected candidate", async () => {
+  let detailCalls = 0;
+  const elements = runApp(async (url) => {
+    if (url === "/api/job-offers") return { ok: true, json: async () => [position("position-1")] };
+    if (url.endsWith("/matches")) {
+      return {
+        ok: true,
+        json: async () => ({
+          items: [{ rank: 1, matchPercentage: 70, candidate: { id: "candidate-1", fullname: "Jane Doe" }, explanation: "Evidence." }],
+        }),
+      };
+    }
+    if (url === "/api/candidates/candidate-1") {
+      detailCalls += 1;
+      if (detailCalls === 1) {
+        return { ok: false, status: 404, json: async () => ({ code: "CANDIDATE_NOT_FOUND" }) };
+      }
+      return { ok: true, json: async () => ({ id: "candidate-1", fullname: "Jane Doe", experiences: [] }) };
+    }
+    return { ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) };
+  }, {}, true);
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+  await elements.get("#find-matches").click();
+  await flushApp();
+
+  await elements.get("#match-results").children[0].children[0].children[0].click();
+  await flushApp();
+  assert.equal(elements.get("#match-details-error").textContent, "Unable to load candidate details. Please retry.");
+  assert.equal(elements.get("#match-details-error").hidden, false);
+  assert.equal(elements.get("#retry-match-details").hidden, false);
+
+  await elements.get("#retry-match-details").click();
+  await flushApp();
+  assert.equal(detailCalls, 2);
+  assert.equal(elements.get("#match-details-error").hidden, true);
+  assert.match(elements.get("#match-details-content").textContent, /Jane Doe/);
+  assert.match(elements.get("#match-details-content").textContent, /No reported experience\./);
+});
+
+test("ignores a stale candidate detail response after selecting another match", async () => {
+  const detailResolvers = new Map();
+  const elements = runApp((url) => {
+    if (url === "/api/job-offers") return Promise.resolve({ ok: true, json: async () => [position("position-1")] });
+    if (url.endsWith("/matches")) {
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({
+          items: [
+            { rank: 1, matchPercentage: 60, candidate: { id: "candidate-1", fullname: "First" }, explanation: "First evidence." },
+            { rank: 2, matchPercentage: 95, candidate: { id: "candidate-2", fullname: "Second" }, explanation: "Second evidence." },
+          ],
+        }),
+      });
+    }
+    if (url.startsWith("/api/candidates/")) {
+      const candidateId = url.split("/").at(-1);
+      return new Promise((resolve) => detailResolvers.set(candidateId, resolve));
+    }
+    return Promise.resolve({ ok: true, json: async () => ({ items: [], page: 0, totalPages: 0 }) });
+  }, {}, true);
+  await flushApp();
+  elements.get("#position-list").children[0].click();
+  await elements.get("#find-matches").click();
+  await flushApp();
+
+  const resultItems = elements.get("#match-results").children;
+  const firstDetailRequest = resultItems[0].children[0].children[0].click();
+  await flushApp();
+  await elements.get("#back-to-match-results").click();
+  const secondDetailRequest = resultItems[1].children[0].children[0].click();
+  await flushApp();
+
+  detailResolvers.get("candidate-1")({
+    ok: true,
+    json: async () => ({ id: "candidate-1", fullname: "Stale First", experiences: [] }),
+  });
+  await firstDetailRequest;
+  assert.doesNotMatch(elements.get("#match-details-content").textContent, /Stale First/);
+  detailResolvers.get("candidate-2")({
+    ok: true,
+    json: async () => ({ id: "candidate-2", fullname: "Current Second", experiences: [] }),
+  });
+  await secondDetailRequest;
+  assert.match(elements.get("#match-details-content").textContent, /Current Second/);
+  assert.match(elements.get("#match-details-content").textContent, /Second evidence\./);
 });
 
 test("loads and safely renders candidate summaries with placeholders and pagination", async () => {
@@ -276,7 +700,8 @@ test("loads and safely renders candidate summaries with placeholders and paginat
   assert.equal(entries[0].tagName, "BUTTON");
   assert.equal(list.children[0].attributes.get("role"), "listitem");
   assert.match(entries[0].textContent, /<img src=x onerror=alert\(1\)>/);
-  assert.match(entries[0].textContent, /São Paulo, Brazil/);
+  assert.equal(entries[0].textContent, `${unsafeName} - Engineer`);
+  assert.doesNotMatch(entries[0].textContent, /São Paulo|Brazil|5 years/);
   assert.equal(elements.get("#candidate-pagination").hidden, false);
   assert.equal(elements.get("#candidate-page-indicator").textContent, "Page 1 of 2");
   assert.equal(elements.get("#candidate-previous-page").disabled, true);
@@ -295,7 +720,7 @@ test("caps candidate summaries at 15 and displays placeholders for missing summa
 
   const entries = elements.get("#candidate-list").querySelectorAll(".candidate-entry");
   assert.equal(entries.length, 15);
-  assert.equal(entries[0].textContent, "— · — · — · —");
+  assert.equal(entries[0].textContent, "— - —");
 });
 
 test("changes candidate pages within boundaries and refreshes when the tab is reopened", async () => {
@@ -552,25 +977,20 @@ test("clears a missing candidate and refreshes the current list page", async () 
   assert.equal(elements.get("#candidate-details-content").children.length, 0);
 });
 
-test("renders Markdown after disabling raw HTML and sanitizing generated markup", async () => {
-  const parseOptions = [];
-  const sanitizedInputs = [];
-  const unsafeMarkup = "<p><strong>Safe Markdown</strong><img src=x onerror=alert(1)></p>";
+test("renders supported plain-text formatting markers safely in position details", async () => {
+  const unsafeText = "**bold** <img src=x onerror=alert(1)>";
   const elements = runApp(async () => ({
     ok: true,
     json: async () => [{
-      id: "offer-markdown",
+      id: "offer-formatting",
       company: "<b>Company</b>",
       jobName: "Engineer",
-      jobDescription: "**Safe Markdown**",
-      requiredQualifications: "- Java",
+      jobDescription: "**Bold text** and *italic text*\n- Java\n- **Spring**",
+      requiredQualifications: unsafeText,
       location: "Dublin",
       allocation: "Remote",
     }],
-  }), {
-    marked: { parse: (_source, options) => { parseOptions.push(options); return unsafeMarkup; } },
-    DOMPurify: { sanitize: (html) => { sanitizedInputs.push(html); return "<p><strong>Safe Markdown</strong></p>"; } },
-  });
+  }));
   await flushApp();
   elements.get("#position-list").children[0].click();
 
@@ -579,10 +999,15 @@ test("renders Markdown after disabling raw HTML and sanitizing generated markup"
   const description = detailFields[1].children[1];
   assert.equal(company.textContent, "<b>Company</b>");
   assert.equal(company.html, "");
-  assert.equal(parseOptions.length, 2);
-  assert.ok(parseOptions.every((options) => options.html === false));
-  assert.deepEqual(sanitizedInputs, [unsafeMarkup, unsafeMarkup]);
-  assert.equal(description.innerHTML, "<p><strong>Safe Markdown</strong></p>");
+  assert.equal(description.children[0].children[0].tagName, "STRONG");
+  assert.equal(description.children[0].children[0].textContent, "Bold text");
+  assert.equal(description.children[0].children[2].tagName, "EM");
+  assert.equal(description.children[1].tagName, "UL");
+  assert.equal(description.children[1].children[1].children[0].tagName, "STRONG");
+  const qualifications = detailFields[2].children[1];
+  assert.equal(qualifications.textContent, "bold <img src=x onerror=alert(1)>");
+  assert.equal(qualifications.children[0].children[0].tagName, "STRONG");
+  assert.doesNotMatch(page, /marked@|dompurify@/);
 });
 
 test("leaves the list and details empty for an empty response", async () => {
@@ -650,19 +1075,23 @@ test("shows edit and delete actions only when an offer is selected", async () =>
 
   const edit = elements.get("#edit-job-offer");
   const remove = elements.get("#delete-job-offer");
+  const findMatches = elements.get("#find-matches");
   assert.equal(elements.get("#new-job-offer").hidden, false);
   assert.equal(edit.hidden, true);
   assert.equal(remove.hidden, true);
+  assert.equal(findMatches.hidden, true);
 
   const entries = elements.get("#position-list").children;
   entries[0].click();
   assert.equal(edit.hidden, false);
   assert.equal(remove.hidden, false);
+  assert.equal(findMatches.hidden, false);
   assert.equal(entries[0].attributes.get("aria-selected"), "true");
 
   entries[1].click();
   assert.equal(entries[0].attributes.get("aria-selected"), "false");
   assert.equal(entries[1].attributes.get("aria-selected"), "true");
+  assert.equal(findMatches.hidden, false);
   assert.equal(entries[1].classList.contains("job-offer-button"), false);
   assert.match(elements.get("#position-details").textContent, /Designer/);
   assert.doesNotMatch(elements.get("#position-details").textContent, /Engineer/);
@@ -700,6 +1129,8 @@ test("uses the shared style and dimensions for job-offer buttons", () => {
     assert.match(button[0], /class="[^"]*job-offer-button/);
   });
   assert.match(styles, /\.job-offer-button\s*\{[^}]*height:\s*35px;[^}]*font-size:\s*0\.75rem;/s);
+  assert.match(styles, /#find-matches\s*\{[^}]*border-color:\s*#198754;[^}]*background:\s*#198754;/s);
+  assert.match(styles, /#find-matches:hover,\s*#find-matches:focus-visible\s*\{[^}]*border-color:\s*#198754;[^}]*background:\s*#198754;/s);
   assert.match(styles, /\.position-entry\.selected\s*\{/);
   assert.doesNotMatch(page, /<button[^>]*class="[^"]*position/);
 });

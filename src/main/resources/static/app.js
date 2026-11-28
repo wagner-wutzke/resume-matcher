@@ -1,5 +1,18 @@
 const positionList = document.querySelector("#position-list");
 const positionDetails = document.querySelector("#position-details");
+const candidateMatches = document.querySelector("#candidate-matches");
+const findMatchesButton = document.querySelector("#find-matches");
+const matchStatus = document.querySelector("#match-status");
+const matchEmpty = document.querySelector("#match-empty");
+const matchError = document.querySelector("#match-error");
+const retryMatchesButton = document.querySelector("#retry-matches");
+const matchResultsList = document.querySelector("#match-results");
+const matchDetailsPanel = document.querySelector("#match-details");
+const backToMatchResultsButton = document.querySelector("#back-to-match-results");
+const matchDetailsContent = document.querySelector("#match-details-content");
+const matchDetailsStatus = document.querySelector("#match-details-status");
+const matchDetailsError = document.querySelector("#match-details-error");
+const retryMatchDetailsButton = document.querySelector("#retry-match-details");
 const editButton = document.querySelector("#edit-job-offer");
 const deleteButton = document.querySelector("#delete-job-offer");
 const deleteError = document.querySelector("#job-offer-delete-error");
@@ -52,6 +65,12 @@ let originalFormValues = [];
 let candidatePage = 0;
 let candidateTotalPages = 0;
 let selectedCandidateId = null;
+let matchRequestGeneration = 0;
+let matchRequestInFlight = false;
+let currentMatchResults = [];
+let matchPositionId = null;
+let matchDetailsRequestGeneration = 0;
+let selectedMatch = null;
 const CANDIDATE_PAGE_SIZE = 15;
 const EMPTY_VALUE = "—";
 
@@ -68,16 +87,59 @@ function setText(element, value) {
   element.textContent = value == null ? "" : String(value);
 }
 
+function appendFormattedInline(container, text) {
+  const markerPattern = /(\*\*[^*\n]+\*\*|\*[^*\n]+\*)/g;
+  let start = 0;
+  for (const match of text.matchAll(markerPattern)) {
+    const offset = match.index;
+    if (offset > start) {
+      const plainText = document.createElement("span");
+      setText(plainText, text.slice(start, offset));
+      container.append(plainText);
+    }
+    const isBold = match[0].startsWith("**");
+    const formattedText = document.createElement(isBold ? "strong" : "em");
+    setText(formattedText, match[0].slice(isBold ? 2 : 1, isBold ? -2 : -1));
+    container.append(formattedText);
+    start = offset + match[0].length;
+  }
+  if (start < text.length) {
+    const plainText = document.createElement("span");
+    setText(plainText, text.slice(start));
+    container.append(plainText);
+  }
+}
+
+function renderFormattedPositionText(element, value) {
+  const lines = value == null ? [] : String(value).split(/\r?\n/);
+  let index = 0;
+  while (index < lines.length) {
+    if (/^\s*-\s+/.test(lines[index])) {
+      const list = document.createElement("ul");
+      while (index < lines.length && /^\s*-\s+/.test(lines[index])) {
+        const item = document.createElement("li");
+        appendFormattedInline(item, lines[index].replace(/^\s*-\s+/, ""));
+        list.append(item);
+        index += 1;
+      }
+      element.append(list);
+      continue;
+    }
+    if (lines[index] === "") {
+      element.append(document.createElement("br"));
+      index += 1;
+      continue;
+    }
+    const paragraph = document.createElement("p");
+    appendFormattedInline(paragraph, lines[index]);
+    element.append(paragraph);
+    index += 1;
+  }
+}
+
 function candidateValue(value) {
   const text = value == null ? "" : String(value).trim();
   return text || EMPTY_VALUE;
-}
-
-function candidateLocation(candidate) {
-  return [candidate.city, candidate.country]
-    .map((value) => value == null ? "" : String(value).trim())
-    .filter(Boolean)
-    .join(", ") || EMPTY_VALUE;
 }
 
 function clearCandidateDetails() {
@@ -102,8 +164,7 @@ function renderCandidateSummaries(items) {
     entry.dataset.candidateId = String(candidate.id ?? "");
     setText(
       entry,
-      `${candidateValue(candidate.fullname)} · ${candidateValue(candidate.position)} · `
-        + `${candidateLocation(candidate)} · ${candidateValue(candidate.yearsOfExperience)}`,
+      `${candidateValue(candidate.fullname)} - ${candidateValue(candidate.position)}`,
     );
     entry.addEventListener("click", () => selectCandidate(candidate, entry));
     item.append(entry);
@@ -301,16 +362,6 @@ function positionListLabel(position) {
   return `${positionLabel(position)} - ${position.company ?? ""} - ${position.jobId ?? ""}`;
 }
 
-function renderMarkdown(element, value) {
-  const markdown = value == null ? "" : String(value);
-  if (typeof marked === "undefined" || typeof DOMPurify === "undefined") {
-    setText(element, markdown);
-    return;
-  }
-  const generatedMarkup = marked.parse(markdown, { html: false });
-  element.innerHTML = DOMPurify.sanitize(generatedMarkup);
-}
-
 function findPositionEntry(positionId) {
   const entries = positionList.querySelectorAll(".position-entry");
   for (let index = 0; index < entries.length; index += 1) {
@@ -322,10 +373,274 @@ function findPositionEntry(positionId) {
 function setSelectionActions(hasSelection) {
   editButton.hidden = !hasSelection;
   deleteButton.hidden = !hasSelection;
+  findMatchesButton.hidden = !hasSelection;
+}
+
+function clearMatchResults() {
+  matchRequestGeneration += 1;
+  matchDetailsRequestGeneration += 1;
+  matchRequestInFlight = false;
+  currentMatchResults = [];
+  matchPositionId = null;
+  selectedMatch = null;
+  findMatchesButton.disabled = false;
+  matchResultsList.setAttribute("aria-busy", "false");
+  matchResultsList.hidden = false;
+  matchResultsList.replaceChildren();
+  matchStatus.textContent = "";
+  matchEmpty.hidden = true;
+  matchError.textContent = "";
+  matchError.hidden = true;
+  retryMatchesButton.hidden = true;
+  matchDetailsPanel.hidden = true;
+  matchDetailsPanel.setAttribute("aria-busy", "false");
+  matchDetailsContent.replaceChildren();
+  matchDetailsStatus.textContent = "";
+  matchDetailsError.textContent = "";
+  matchDetailsError.hidden = true;
+  retryMatchDetailsButton.hidden = true;
+}
+
+function renderMatchResults(items) {
+  matchResultsList.replaceChildren();
+  items.forEach((match) => {
+    const item = document.createElement("li");
+    item.className = "match-result";
+    const summary = match.candidate ?? {};
+    const heading = document.createElement("h3");
+    heading.className = "h5 match-result-heading";
+    const detailsButton = document.createElement("button");
+    detailsButton.type = "button";
+    detailsButton.className = "match-result-link";
+    detailsButton.setAttribute(
+      "aria-label",
+      `View match details for ${candidateValue(summary.fullname)}`,
+    );
+    setText(
+      detailsButton,
+      `${candidateValue(summary.fullname)} - ${candidateValue(summary.position)} - `
+        + `${match.matchPercentage}% match`,
+    );
+    detailsButton.addEventListener("click", () => loadMatchCandidateDetails(match));
+    heading.append(detailsButton);
+    const explanation = document.createElement("p");
+    explanation.className = "match-explanation";
+    setText(explanation, match.explanation);
+    item.append(heading, explanation);
+    matchResultsList.append(item);
+  });
+}
+
+function renderMatchCandidateDetails(candidate, match, position) {
+  matchDetailsContent.replaceChildren();
+  const title = document.createElement("h2");
+  title.className = "detail-title";
+  setText(title, candidateValue(candidate.fullname));
+  matchDetailsContent.append(title);
+
+  const positionContext = document.createElement("p");
+  setText(positionContext, `Match for ${positionLabel(position)} · ${candidateValue(position.company)}`);
+  matchDetailsContent.append(positionContext);
+
+  const explanationHeading = document.createElement("h3");
+  explanationHeading.className = "h5";
+  setText(explanationHeading, "Match explanation");
+  const explanation = document.createElement("p");
+  setText(explanation, match.explanation);
+  matchDetailsContent.append(explanationHeading, explanation);
+
+  const fields = document.createElement("dl");
+  [
+    ["Email", candidate.email],
+    ["Full name", candidate.fullname],
+    ["Country", candidate.country],
+    ["City", candidate.city],
+    ["Position", candidate.position],
+    ["Skills", candidate.skills],
+    ["Allocation", candidate.allocation],
+    ["Years of experience", candidate.yearsOfExperience],
+  ].forEach(([label, value]) => appendCandidateField(fields, label, value));
+  matchDetailsContent.append(fields);
+
+  const experienceHeading = document.createElement("h3");
+  experienceHeading.className = "h5 mt-4";
+  setText(experienceHeading, "Work experience");
+  matchDetailsContent.append(experienceHeading);
+  const experiences = Array.isArray(candidate.experiences) ? candidate.experiences : [];
+  if (experiences.length === 0) {
+    const emptyMessage = document.createElement("p");
+    setText(emptyMessage, "No reported experience.");
+    matchDetailsContent.append(emptyMessage);
+    return;
+  }
+
+  const experienceList = document.createElement("ul");
+  experienceList.className = "candidate-experiences";
+  experiences.forEach((experience) => {
+    const item = document.createElement("li");
+    item.className = "candidate-experience";
+    const experienceTitle = document.createElement("h4");
+    experienceTitle.className = "h6";
+    setText(experienceTitle, candidateValue(experience.title));
+    const experienceFields = document.createElement("dl");
+    [
+      ["Company", experience.company],
+      ["Period", experience.period],
+      ["Responsibilities", experience.responsibilities],
+      ["Achievements", experience.achievements],
+    ].forEach(([label, value]) => appendCandidateField(experienceFields, label, value));
+    item.append(experienceTitle, experienceFields);
+    experienceList.append(item);
+  });
+  matchDetailsContent.append(experienceList);
+}
+
+function isCurrentMatchDetailsRequest(requestGeneration, positionId, match) {
+  return requestGeneration === matchDetailsRequestGeneration
+    && selectedMatch === match
+    && selectedPosition
+    && String(selectedPosition.id ?? "") === positionId
+    && matchPositionId === positionId;
+}
+
+async function loadMatchCandidateDetails(match) {
+  if (!selectedPosition || matchPositionId !== String(selectedPosition.id ?? "")) return;
+  const candidateId = String(match.candidate?.id ?? "");
+  if (!candidateId) return;
+
+  selectedMatch = match;
+  const position = selectedPosition;
+  const positionId = String(position.id ?? "");
+  const requestGeneration = ++matchDetailsRequestGeneration;
+  matchResultsList.hidden = true;
+  matchDetailsPanel.hidden = false;
+  matchDetailsPanel.setAttribute("aria-busy", "true");
+  matchDetailsStatus.textContent = "Loading candidate details…";
+  matchDetailsError.textContent = "";
+  matchDetailsError.hidden = true;
+  retryMatchDetailsButton.hidden = true;
+  matchDetailsContent.replaceChildren();
+
+  try {
+    const response = await fetch(`/api/candidates/${encodeURIComponent(candidateId)}`);
+    let candidate = null;
+    try {
+      candidate = await response.json();
+    } catch {
+      candidate = null;
+    }
+    if (!response.ok
+        || !candidate
+        || candidate.code === "CANDIDATE_NOT_FOUND"
+        || String(candidate.id ?? "") !== candidateId) {
+      throw new Error("Candidate details unavailable");
+    }
+    if (!isCurrentMatchDetailsRequest(requestGeneration, positionId, match)) return;
+    renderMatchCandidateDetails(candidate, match, position);
+    matchDetailsStatus.textContent = "";
+  } catch {
+    if (!isCurrentMatchDetailsRequest(requestGeneration, positionId, match)) return;
+    matchDetailsContent.replaceChildren();
+    matchDetailsStatus.textContent = "";
+    matchDetailsError.textContent = "Unable to load candidate details. Please retry.";
+    matchDetailsError.hidden = false;
+    retryMatchDetailsButton.hidden = false;
+  } finally {
+    if (isCurrentMatchDetailsRequest(requestGeneration, positionId, match)) {
+      matchDetailsPanel.setAttribute("aria-busy", "false");
+    }
+  }
+}
+
+function returnToMatchResults() {
+  matchDetailsRequestGeneration += 1;
+  selectedMatch = null;
+  matchDetailsPanel.hidden = true;
+  matchDetailsPanel.setAttribute("aria-busy", "false");
+  matchDetailsContent.replaceChildren();
+  matchDetailsStatus.textContent = "";
+  matchDetailsError.textContent = "";
+  matchDetailsError.hidden = true;
+  retryMatchDetailsButton.hidden = true;
+  matchResultsList.hidden = false;
+}
+
+async function loadMatches() {
+  if (!selectedPosition || matchRequestInFlight) return;
+
+  const positionId = String(selectedPosition.id ?? "");
+  const requestGeneration = ++matchRequestGeneration;
+  matchRequestInFlight = true;
+  currentMatchResults = [];
+  matchPositionId = positionId;
+  matchResultsList.replaceChildren();
+  matchResultsList.setAttribute("aria-busy", "true");
+  matchStatus.textContent = "Finding matching candidates…";
+  matchEmpty.hidden = true;
+  matchError.textContent = "";
+  matchError.hidden = true;
+  retryMatchesButton.hidden = true;
+  matchDetailsPanel.hidden = true;
+  matchDetailsRequestGeneration += 1;
+  selectedMatch = null;
+  matchResultsList.hidden = false;
+  matchDetailsContent.replaceChildren();
+  matchDetailsStatus.textContent = "";
+  matchDetailsError.textContent = "";
+  matchDetailsError.hidden = true;
+  retryMatchDetailsButton.hidden = true;
+  findMatchesButton.disabled = true;
+
+  try {
+    const response = await fetch(
+      `/api/job-offers/${encodeURIComponent(positionId)}/matches`,
+      { method: "POST" },
+    );
+    let result = null;
+    try {
+      result = await response.json();
+    } catch {
+      result = null;
+    }
+    if (!response.ok || !result || !Array.isArray(result.items)) {
+      throw new Error("Candidate matching unavailable");
+    }
+    if (requestGeneration !== matchRequestGeneration
+        || !selectedPosition
+        || String(selectedPosition.id ?? "") !== positionId) return;
+
+    currentMatchResults = result.items;
+    matchPositionId = positionId;
+    matchStatus.textContent = "";
+    if (currentMatchResults.length === 0) {
+      matchEmpty.hidden = false;
+    } else {
+      renderMatchResults(currentMatchResults);
+    }
+  } catch {
+    if (requestGeneration !== matchRequestGeneration
+        || !selectedPosition
+        || String(selectedPosition.id ?? "") !== positionId) return;
+    currentMatchResults = [];
+    matchPositionId = null;
+    matchResultsList.replaceChildren();
+    matchStatus.textContent = "";
+    matchError.textContent = "Unable to find matches. Please retry.";
+    matchError.hidden = false;
+    retryMatchesButton.hidden = false;
+  } finally {
+    if (requestGeneration === matchRequestGeneration) {
+      matchRequestInFlight = false;
+      findMatchesButton.disabled = false;
+      matchResultsList.setAttribute("aria-busy", "false");
+    }
+  }
 }
 
 function showPosition(position, selectedEntry) {
+  if (selectedPosition?.id !== position.id) clearMatchResults();
   selectedPosition = position;
+  candidateMatches.hidden = false;
   setSelectionActions(true);
   positionList.querySelectorAll(".position-entry").forEach((entry) => {
     const selected = entry === selectedEntry;
@@ -341,14 +656,14 @@ function showPosition(position, selectedEntry) {
   positionDetails.append(title);
 
   const details = document.createElement("dl");
-  detailFields.forEach(([label, property, isMarkdown]) => {
+  detailFields.forEach(([label, property, supportsFormatting]) => {
     const field = document.createElement("div");
     field.className = "detail-field";
 
     const term = document.createElement("dt");
     term.textContent = label;
     const description = document.createElement("dd");
-    if (isMarkdown) renderMarkdown(description, position[property]);
+    if (supportsFormatting) renderFormattedPositionText(description, position[property]);
     else setText(description, position[property]);
 
     field.append(term, description);
@@ -358,7 +673,9 @@ function showPosition(position, selectedEntry) {
 }
 
 function renderPositions(nextPositions) {
+  clearMatchResults();
   setSelectionActions(false);
+  candidateMatches.hidden = true;
   positions = nextPositions;
   positionList.replaceChildren();
   positions.forEach((position) => {
@@ -555,6 +872,11 @@ function showFormError(message) {
 }
 
 newButton.addEventListener("click", openNewOfferForm);
+findMatchesButton.addEventListener("click", loadMatches);
+retryMatchesButton.addEventListener("click", loadMatches);
+backToMatchResultsButton.addEventListener("click", returnToMatchResults);
+retryMatchDetailsButton.addEventListener("click", () =>
+  selectedMatch ? loadMatchCandidateDetails(selectedMatch) : undefined);
 editButton.addEventListener("click", openEditOfferForm);
 deleteButton.addEventListener("click", () => {
   return deleteSelectedOffer().catch((error) => {

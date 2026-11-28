@@ -78,14 +78,16 @@
 - [ ] **Task 4.6 — Confirm discarding edits:** Close unchanged forms directly; ask for confirmation
   when changed; preserve values when continuing to edit and discard only on confirmation (**AC10**).
 
-## Phase 5: Delete UI and Markdown Rendering
+## Phase 5: Delete UI and Position Detail Formatting
 
 - [ ] **Task 5.1 — Implement delete success and failure UI:** On success remove the selected offer
   and clear Details; on failure retain the offer/details and show an error (**AC12–AC14**).
-- [ ] **Task 5.2 — Render Markdown safely:** Render Job Description and Required Qualifications as
-  Markdown with raw HTML disabled and sanitized output (**AC16**).
+- [ ] **Task 5.2 — Render plain-text formatting markers safely:** Render `**bold**`, `*italic*`,
+  and `- ` bullet markers using DOM elements; keep HTML-looking text literal (**AC16**).
 - [ ] **Task 5.3 — Apply consistent button sizing:** Apply the approved New Job Offer style to all
   job-offer buttons with a font size of `0.75rem` and height of `35px` (**AC17**).
+- [ ] **Task 5.4 — Set detail label typography:** Set `.detail-field > dt` to `14px` and verify the
+  rule with a focused style test (**AC21**).
 
 ## Phase 6: Acceptance Verification and Review
 

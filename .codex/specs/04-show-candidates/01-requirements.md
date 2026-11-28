@@ -1,6 +1,6 @@
 # Feature Specification: 04 — Show Candidates
 
-- **Status:** [x] Draft | [ ] Approved for Design | [ ] In Implementation | [ ] Completed
+- **Status:** [ ] Draft | [ ] Approved for Design | [ ] In Implementation | [x] Completed
 - **Author/Agent:** @architect
 - **Date:** 2026-11-27
 
@@ -44,8 +44,8 @@ defined by this feature and must not expose resume source text, LLM prompts, or 
   Page navigation cannot move before the first page or past the last available page.
 - **BR03 — Candidate identity:** Identify and select a candidate by its persisted candidate ID;
   email is not used as a UI key.
-- **BR04 — Candidate summary:** Each list entry displays the candidate's full name, position,
-  location, and derived years of experience. Missing values display as an em dash (`—`).
+- **BR04 — Candidate summary:** Each list entry displays only the candidate's full name and
+  position in the format `[name] - [position]`. Missing values display as an em dash (`—`).
 - **BR05 — Candidate details:** The detail panel displays email, full name, country, city,
   position, skills, allocation, derived years of experience, and all reported work experiences.
   Each experience displays title, company, period, responsibilities, and achievements. Missing
@@ -68,9 +68,10 @@ The page uses the ordering defined by BR07.
 
 ### FR02 — Display candidate summaries
 
-Display each candidate returned for the current page as a selectable list entry. Show the values
-defined by BR04. Selecting an entry marks it as selected and requests the candidate details by its
-persisted ID.
+Display each candidate returned for the current page as a selectable list entry. Show only the
+candidate's full name and position, formatted as `[name] - [position]`; do not show location or
+years of experience in the list entry. Selecting an entry marks it as selected and requests the
+candidate details by its persisted ID.
 
 ### FR03 — Navigate candidate pages
 
@@ -115,6 +116,8 @@ different candidate.
   Positions tab or unrelated application functionality.
 - **NFR05 — Testability:** Candidate page retrieval, detail retrieval, pagination boundaries,
   selection behavior, and UI states are independently testable.
+- **NFR06 — List separation:** Candidate and Open Positions entries are separated by a fine
+  horizontal gray line.
 
 ## 7. Acceptance Criteria
 

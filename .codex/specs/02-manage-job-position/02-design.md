@@ -30,8 +30,8 @@ The create/update request contains these seven editable fields:
 |--------------------------|--------------------------|-----------------------------------|---------------------------------------------------|
 | `company`                | `company`                | Hiring company name               | Required                                          |
 | `jobName`                | `jobTitle`               | Job Name                          | Required                                          |
-| `jobDescription`         | `jobDescription`         | Job description Markdown source  | Required                                          |
-| `requiredQualifications` | `requiredQualifications` | Qualifications Markdown source   | Required                                          |
+| `jobDescription`         | `jobDescription`         | Job description plain text with supported formatting markers | Required                         |
+| `requiredQualifications` | `requiredQualifications` | Qualifications plain text with supported formatting markers  | Required                         |
 | `yearsOfExperience`      | `yearsOfExperience`      | Years of professional experience | Required numeric value                            |
 | `location`               | `location`               | Job location                      | Required                                          |
 | `allocation`             | `allocation`             | Work allocation                   | Required; one of `Remote`, `Hybrid`, or `On-site` |
@@ -88,10 +88,11 @@ Delete the identified offer and return `204 No Content`, or `404 Not Found` if i
 - Load the catalog once from `GET /api/job-offers` on page load.
 - Display each offer as a selectable, non-button list entry with the exact text format
   `[jobTitle] - [company] - [jobId]`.
+- Separate Open Positions entries with a fine horizontal gray line.
 - Selecting an entry clears any previous selection and displays the selected offer's details.
 - Display Company above Job Description. Display the Job Name and the other existing offer details
-  in the Details panel. Render Job Description and Required Qualifications as Markdown as described
-  in Section 6.
+  in the Details panel. Render Job Description and Required Qualifications with the supported
+  plain-text markers described in Section 6.
 - Keep **New Job Offer** visible. Show **Edit** and **Delete** only when an offer is selected.
 - After a successful create, add the returned offer to the list, select it, and display its details.
   After a successful edit, update the list and details and keep that offer selected. After a
@@ -117,21 +118,33 @@ Store the form's opening values to detect edits. Cancel closes an unchanged form
 values changed, show a custom discard prompt. Discard closes without saving; continuing to edit
 closes the prompt and preserves the entered values.
 
-## 6. Markdown and Safe Rendering
+## 6. Plain-Text Formatting and Safe Rendering
 
-Store Job Description and Required Qualifications as Markdown source. Render them in the Details
-panel with a client-side Markdown renderer configured to disable raw HTML, then sanitize generated
-markup before insertion. Render Company, Job Name, Location, Allocation, list labels, and error text
-as text.
+Store Job Description and Required Qualifications as plain text. In the Details panel, interpret
+`**text**` as bold, `*text*` as italic, and lines beginning with `- ` as bullet items. Build only
+the corresponding `strong`, `em`, `ul`, and `li` elements with DOM APIs; set all user-provided text
+through text nodes. HTML-looking text and unsupported Markdown syntax remain literal. Do not use a
+Markdown parser or insert user-provided strings as HTML. Render Company, Job Name, Location,
+Allocation, list labels, and error text as text.
 
-## 7. Button Styling
+All `.detail-field > dt` labels use a font size of `14px`.
+
+## 7. Workspace Visual Style
+
+Use the shared high-contrast navy, indigo, and teal application palette defined in the SPA Skeleton
+design. The Open Positions list uses a pale indigo hover state and a stronger selected state with
+an indigo leading edge, heavier text, and a subtle shadow, plus a fine gray separator below each
+entry. Keep the Details area on a white surface with a clear boundary from the list panel. Preserve
+the matching action's specified green color.
+
+## 8. Button Styling
 
 Apply the **New Job Offer** button's visual style, `0.75rem` font size, and `35px` height to all
 actual buttons in the job-offer feature, including action, form, close, and discard-confirmation
 buttons. Selectable offer entries are non-button elements and are excluded from this button styling
 requirement.
 
-## 8. Verification Mapping
+## 9. Verification Mapping
 
 | Requirement                                                                   | Design verification                                                                                                                     |
 |-------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
@@ -140,7 +153,8 @@ requirement.
 | Form open/edit/validation (Items 5–7, 12–13, 19–20; AC04–AC07, AC15, AC20)   | Frontend tests cover modal fields, edit values, Years of Experience, allocation options, required validation, and Company placement.    |
 | Save outcomes (Items 8–11; AC08–AC11)                                         | API/UI tests cover successful and failed create/update and the resulting modal, list, and Details states.                               |
 | Delete outcomes (Items 16–17; AC12–AC14)                                      | API/UI tests cover Delete visibility, successful removal, failed deletion, and Details state.                                           |
-| Markdown (Item 14; AC16)                                                      | UI tests verify Markdown formatting and safe rendering.                                                                                 |
+| Plain-text formatting (Item 14; AC16)                                        | UI tests verify bold, italic, bullet rendering, and literal rendering of HTML-looking text.                                             |
+| Detail label typography (Item 21; AC21)                                      | UI style test verifies `.detail-field > dt` uses a `14px` font size.                                                                    |
 | Button sizing (Item 15; AC17)                                                 | Style tests verify button style, `0.75rem` font size, and `35px` height.                                                                |
 
 The requirements now make Years of Experience required and persisted. It remains in Details as
